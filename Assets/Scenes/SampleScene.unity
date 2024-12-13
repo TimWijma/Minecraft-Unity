@@ -270,7 +270,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   player: {fileID: 1379041674}
-  height: 10
+  offset: {x: 0, y: 5, z: -7}
+  mouseSensitivity: 2
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -422,8 +423,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: 16
-  renderDistance: 1
-  heightScale: 5
+  renderDistance: 5
+  heightScale: 15
   player: {fileID: 1379041674}
   chunkPrefab: {fileID: 1228084881}
   defaultMaterial: {fileID: 2100000, guid: 67f975776194fc89890e809e445ccb59, type: 2}
@@ -615,7 +616,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6edb5b058b74062ce993f0a79562eaba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  borderHeight: 0.5
+  borderHeight: 7.5
   borderColor: {r: 1, g: 0, b: 0, a: 1}
   lineWidth: 0.1
 --- !u!114 &1228084888

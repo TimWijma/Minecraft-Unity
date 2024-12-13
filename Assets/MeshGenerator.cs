@@ -2,10 +2,10 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class MeshExample : MonoBehaviour
+public class MeshGenerator : MonoBehaviour
 {
     public int chunkSize = 16;
-    public int renderDistance = 3;
+    public int renderDistance = 5;
     public int heightScale = 2;
 
     public Transform player;
@@ -24,28 +24,26 @@ public class MeshExample : MonoBehaviour
         currentChunkCenter = GetChunkCenterForPosition(player.position);
         GenerateChunk(currentChunkCenter);
         currentChunk = chunks[currentChunkCenter];
-        // HighlightCurrentChunk();
+        HighlightCurrentChunk();
     }
 
     void Update()
     {
         Vector3 newChunkCenter = GetChunkCenterForPosition(player.position);
 
-        // Only generate a new chunk if the player has moved to a different chunk
         if (Vector3.Distance(newChunkCenter, currentChunkCenter) > 0.01f)
         {
-            // UnhighlightCurrentChunk();
+            UnhighlightCurrentChunk();
             currentChunkCenter = newChunkCenter;
             ClearChunks();
             GenerateChunksInRadius(renderDistance);
             currentChunk = chunks[currentChunkCenter];
-            // HighlightCurrentChunk();
+            HighlightCurrentChunk();
         }
     }
 
     Vector3 GetChunkCenterForPosition(Vector3 position)
     {
-        // Calculate chunk center based on chunk size and vertex spacing
         float x = Mathf.Floor(position.x / chunkSize) * chunkSize + (chunkSize / 2f);
         float z = Mathf.Floor(position.z / chunkSize) * chunkSize + (chunkSize / 2f);
 
@@ -97,67 +95,37 @@ public class MeshExample : MonoBehaviour
 
         chunkObject.AddComponent<ChunkData>().Initialize(chunkSize);
         StartCoroutine(CreateChunkComponents(chunkObject));
-        
 
         MeshFilter meshFilter = chunkObject.GetComponent<MeshFilter>();
         MeshCollider meshCollider = chunkObject.GetComponent<MeshCollider>();
 
-        Mesh mesh = new();
-        meshFilter.mesh = mesh;
+        var meshBuilder = new ChunkMeshBuilder(chunkSize * chunkSize);
 
-        int baseVertCount = (chunkSize + 1) * (chunkSize + 1);
-        Vector3[] vertices = new Vector3[baseVertCount];
-
-        int[] triangles = new int[chunkSize * chunkSize * 6];
-
-        for (int z = 0, i = 0; z <= chunkSize; z++)
-        {
-            for (int x = 0; x <= chunkSize; x++, i++)
-            {
-                float localX = x - chunkSize / 2f;
-                float localZ = z - chunkSize / 2f;
-
-                float worldX = localX + chunkCenter.x;
-                float worldZ = localZ + chunkCenter.z;
-
-                float y = Mathf.PerlinNoise(worldX * 0.2f, worldZ * 0.2f) * heightScale;
-
-                vertices[i] = new Vector3(localX, y, localZ);
-            }
-        }
-
-        int vert = 0;
-        int tris = 0;
         for (int z = 0; z < chunkSize; z++)
         {
             for (int x = 0; x < chunkSize; x++)
             {
-                triangles[tris + 0] = vert + 0;
-                triangles[tris + 1] = vert + chunkSize + 1;
-                triangles[tris + 2] = vert + 1;
-                triangles[tris + 3] = vert + 1;
-                triangles[tris + 4] = vert + chunkSize + 1;
-                triangles[tris + 5] = vert + chunkSize + 2;
+                float localX = x - chunkSize / 2f;
+                float localZ = z - chunkSize / 2f;
 
-                vert++;
-                tris += 6;
+                float worldX = chunkCenter.x + localX;
+                float worldZ = chunkCenter.z + localZ;
+
+                int y = Mathf.FloorToInt(Mathf.PerlinNoise(worldX / 10f, worldZ / 10f) * heightScale);
+                meshBuilder.AddCube(new Vector3(localX, y, localZ));
             }
-            vert++;
         }
 
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
+        Mesh mesh = meshBuilder.BuildMesh();
 
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-
+        meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
     }
 
     private IEnumerator CreateChunkComponents(GameObject chunkObject)
     {
         yield return new WaitForEndOfFrame();
-        
+
         chunkObject.GetComponent<ChunkMarker>().CreateMarker();
         chunkObject.GetComponent<ChunkBorder>().CreateBorder();
     }
