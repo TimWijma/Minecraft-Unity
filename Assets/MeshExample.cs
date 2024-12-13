@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -95,8 +96,8 @@ public class MeshExample : MonoBehaviour
         chunks.Add(chunkCenter, chunkObject);
 
         chunkObject.AddComponent<ChunkData>().Initialize(chunkSize);
-        chunkObject.GetComponent<ChunkMarker>().CreateMarker();
-        chunkObject.GetComponent<ChunkBorder>().CreateBorder();
+        StartCoroutine(CreateChunkComponents(chunkObject));
+        
 
         MeshFilter meshFilter = chunkObject.GetComponent<MeshFilter>();
         MeshCollider meshCollider = chunkObject.GetComponent<MeshCollider>();
@@ -104,7 +105,6 @@ public class MeshExample : MonoBehaviour
         Mesh mesh = new();
         meshFilter.mesh = mesh;
 
-        // Vertices and triangles
         int baseVertCount = (chunkSize + 1) * (chunkSize + 1);
         Vector3[] vertices = new Vector3[baseVertCount];
 
@@ -154,6 +154,14 @@ public class MeshExample : MonoBehaviour
         meshCollider.sharedMesh = mesh;
     }
 
+    private IEnumerator CreateChunkComponents(GameObject chunkObject)
+    {
+        yield return new WaitForEndOfFrame();
+        
+        chunkObject.GetComponent<ChunkMarker>().CreateMarker();
+        chunkObject.GetComponent<ChunkBorder>().CreateBorder();
+    }
+
     void HighlightCurrentChunk()
     {
         if (currentChunk != null)
@@ -169,21 +177,6 @@ public class MeshExample : MonoBehaviour
         {
             MeshRenderer renderer = currentChunk.GetComponent<MeshRenderer>();
             renderer.material = defaultMaterial;
-        }
-    }
-
-    private void OnDrawGizmos()
-    {
-        // Draw the edges of the chunk for visualization
-        if (!Application.isPlaying) return;
-
-        Gizmos.color = Color.green;
-        Mesh mesh = GetComponent<MeshFilter>().mesh;
-        Vector3[] vertices = mesh.vertices;
-
-        foreach (Vector3 vertex in vertices)
-        {
-            Gizmos.DrawSphere(transform.TransformPoint(vertex), 0.1f);
         }
     }
 }

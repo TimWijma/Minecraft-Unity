@@ -4,12 +4,12 @@ public class ChunkBorder : MonoBehaviour
 {
     private ChunkData chunkData;
     private LineRenderer lineRenderer;
-    public float borderHeight = 5f;
+    public float borderHeight = 7.5f;
     public Color borderColor = Color.red;
     public float lineWidth = 0.1f;
     private bool isCreated = false;
 
-    private void Awake()
+    private void Start()
     {
         lineRenderer = GetComponent<LineRenderer>();
         chunkData = GetComponent<ChunkData>();
@@ -23,8 +23,6 @@ public class ChunkBorder : MonoBehaviour
     {
         if (isCreated) return;
 
-
-
         float halfSize = chunkData.ChunkSize / 2f;
 
         lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
@@ -32,17 +30,33 @@ public class ChunkBorder : MonoBehaviour
         lineRenderer.endColor = borderColor;
         lineRenderer.startWidth = lineWidth;
         lineRenderer.endWidth = lineWidth;
-        lineRenderer.loop = true;
+        lineRenderer.loop = false;
         lineRenderer.useWorldSpace = false;
 
-        lineRenderer.positionCount = 4;
+        lineRenderer.positionCount = 16;
 
-        Debug.Log("Creating border for chunk with size: " + chunkData.ChunkSize);
+        lineRenderer.SetPosition(0, new Vector3(-halfSize, 0, -halfSize));
+        lineRenderer.SetPosition(1, new Vector3(halfSize, 0, -halfSize));
+        lineRenderer.SetPosition(2, new Vector3(halfSize, 0, halfSize));
+        lineRenderer.SetPosition(3, new Vector3(-halfSize, 0, halfSize));
+        lineRenderer.SetPosition(4, new Vector3(-halfSize, 0, -halfSize));
 
-        lineRenderer.SetPosition(0, new Vector3(-halfSize, borderHeight, -halfSize));
-        lineRenderer.SetPosition(1, new Vector3(halfSize, borderHeight, -halfSize));
-        lineRenderer.SetPosition(2, new Vector3(halfSize, borderHeight, halfSize));
-        lineRenderer.SetPosition(3, new Vector3(-halfSize, borderHeight, halfSize));
+        lineRenderer.SetPosition(5, new Vector3(-halfSize, borderHeight, -halfSize));
+        lineRenderer.SetPosition(6, new Vector3(halfSize, borderHeight, -halfSize));
+        lineRenderer.SetPosition(7, new Vector3(halfSize, borderHeight, halfSize));
+        lineRenderer.SetPosition(8, new Vector3(-halfSize, borderHeight, halfSize));
+        lineRenderer.SetPosition(9, new Vector3(-halfSize, borderHeight, -halfSize));
+
+        lineRenderer.SetPosition(10, new Vector3(-halfSize, borderHeight, halfSize));
+        lineRenderer.SetPosition(11, new Vector3(-halfSize, 0, halfSize));
+        lineRenderer.SetPosition(12, new Vector3(halfSize, 0, halfSize));
+        lineRenderer.SetPosition(13, new Vector3(halfSize, borderHeight, halfSize));
+        lineRenderer.SetPosition(14, new Vector3(halfSize, borderHeight, -halfSize));
+        lineRenderer.SetPosition(15, new Vector3(halfSize, 0, -halfSize));
+        
+        
+
+
 
 
         isCreated = true;
