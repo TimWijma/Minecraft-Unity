@@ -15,7 +15,7 @@ public class PlayerFollow : MonoBehaviour
     {
         if (player != null)
         {
-            transform.position = player.position + new Vector3(0, height, -5);
+            transform.position = player.position + new Vector3(0, height, 0);
             transform.LookAt(player);
         }
     }

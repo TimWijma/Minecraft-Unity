@@ -21,7 +21,6 @@ public class MeshExample : MonoBehaviour
         player.position = new Vector3(0, 10, 0);
 
         currentChunkCenter = GetChunkCenterForPosition(player.position);
-        Debug.Log(currentChunkCenter);
         GenerateChunk(currentChunkCenter);
         currentChunk = chunks[currentChunkCenter];
         // HighlightCurrentChunk();
@@ -29,8 +28,6 @@ public class MeshExample : MonoBehaviour
 
     void Update()
     {
-        Debug.Log("Player position: " + player.position);
-
         Vector3 newChunkCenter = GetChunkCenterForPosition(player.position);
 
         // Only generate a new chunk if the player has moved to a different chunk
@@ -97,6 +94,7 @@ public class MeshExample : MonoBehaviour
         GameObject chunkObject = Instantiate(chunkPrefab, chunkCenter, Quaternion.identity);
         chunks.Add(chunkCenter, chunkObject);
 
+        chunkObject.AddComponent<ChunkData>().Initialize(chunkSize);
         chunkObject.GetComponent<ChunkMarker>().CreateMarker();
         chunkObject.GetComponent<ChunkBorder>().CreateBorder();
 

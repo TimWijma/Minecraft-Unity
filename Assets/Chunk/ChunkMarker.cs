@@ -17,5 +17,7 @@ public class ChunkMarker : MonoBehaviour
 
         Destroy(centerMarker.GetComponent<BoxCollider>());
         centerMarker.GetComponent<MeshRenderer>().material.color = Color.red;
+
+        isCreated = true;
     }
 }
