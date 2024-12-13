@@ -4,31 +4,44 @@ using UnityEngine;
 public class MeshExample : MonoBehaviour
 {
     public int chunkSize = 16;
-    public int renderDistance = 1;
+    public int renderDistance = 3;
+    public int heightScale = 2;
 
     public Transform player;
     public GameObject chunkPrefab;
-    public GameObject centerMarker;
+    public Material defaultMaterial;
+    public Material highlightMaterial;
 
     private Vector3 currentChunkCenter;
     private Dictionary<Vector3, GameObject> chunks = new();
+    private GameObject currentChunk;
 
     void Start()
     {
-        currentChunkCenter = Vector3.zero;
+        player.position = new Vector3(0, 10, 0);
+
+        currentChunkCenter = GetChunkCenterForPosition(player.position);
+        Debug.Log(currentChunkCenter);
         GenerateChunk(currentChunkCenter);
+        currentChunk = chunks[currentChunkCenter];
+        // HighlightCurrentChunk();
     }
 
     void Update()
     {
+        Debug.Log("Player position: " + player.position);
+
         Vector3 newChunkCenter = GetChunkCenterForPosition(player.position);
-        
+
         // Only generate a new chunk if the player has moved to a different chunk
-        if (newChunkCenter != currentChunkCenter)
+        if (Vector3.Distance(newChunkCenter, currentChunkCenter) > 0.01f)
         {
+            // UnhighlightCurrentChunk();
             currentChunkCenter = newChunkCenter;
             ClearChunks();
             GenerateChunksInRadius(renderDistance);
+            currentChunk = chunks[currentChunkCenter];
+            // HighlightCurrentChunk();
         }
     }
 
@@ -60,6 +73,7 @@ public class MeshExample : MonoBehaviour
         foreach (var chunk in chunksToRemove)
         {
             chunks.Remove(chunk);
+
         }
     }
 
@@ -81,8 +95,10 @@ public class MeshExample : MonoBehaviour
         if (chunks.ContainsKey(chunkCenter)) return;
 
         GameObject chunkObject = Instantiate(chunkPrefab, chunkCenter, Quaternion.identity);
-        
         chunks.Add(chunkCenter, chunkObject);
+
+        chunkObject.GetComponent<ChunkMarker>().CreateMarker();
+        chunkObject.GetComponent<ChunkBorder>().CreateBorder();
 
         MeshFilter meshFilter = chunkObject.GetComponent<MeshFilter>();
         MeshCollider meshCollider = chunkObject.GetComponent<MeshCollider>();
@@ -91,19 +107,24 @@ public class MeshExample : MonoBehaviour
         meshFilter.mesh = mesh;
 
         // Vertices and triangles
-        Vector3[] vertices = new Vector3[(chunkSize + 1) * (chunkSize + 1)];
+        int baseVertCount = (chunkSize + 1) * (chunkSize + 1);
+        Vector3[] vertices = new Vector3[baseVertCount];
+
         int[] triangles = new int[chunkSize * chunkSize * 6];
 
         for (int z = 0, i = 0; z <= chunkSize; z++)
         {
             for (int x = 0; x <= chunkSize; x++, i++)
             {
-                float worldX = x + chunkCenter.x;
-                float worldZ = z + chunkCenter.z;
+                float localX = x - chunkSize / 2f;
+                float localZ = z - chunkSize / 2f;
 
-                float y = Mathf.PerlinNoise(worldX * 0.1f, worldZ * 0.1f) * 2f;
+                float worldX = localX + chunkCenter.x;
+                float worldZ = localZ + chunkCenter.z;
 
-                vertices[i] = new Vector3(x, y, z);
+                float y = Mathf.PerlinNoise(worldX * 0.2f, worldZ * 0.2f) * heightScale;
+
+                vertices[i] = new Vector3(localX, y, localZ);
             }
         }
 
@@ -133,6 +154,24 @@ public class MeshExample : MonoBehaviour
         mesh.RecalculateBounds();
 
         meshCollider.sharedMesh = mesh;
+    }
+
+    void HighlightCurrentChunk()
+    {
+        if (currentChunk != null)
+        {
+            MeshRenderer renderer = currentChunk.GetComponent<MeshRenderer>();
+            renderer.material = highlightMaterial;
+        }
+    }
+
+    void UnhighlightCurrentChunk()
+    {
+        if (currentChunk != null)
+        {
+            MeshRenderer renderer = currentChunk.GetComponent<MeshRenderer>();
+            renderer.material = defaultMaterial;
+        }
     }
 
     private void OnDrawGizmos()
