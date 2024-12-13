@@ -14,8 +14,8 @@ public class PlayerFollow : MonoBehaviour
     {
         if (player != null)
         {
-            transform.position = player.position + new Vector3(0, 2, -2); // Camera position with offset
-            transform.LookAt(player); // Ensure camera looks at player
+            transform.position = player.position + new Vector3(0, 50, 0);
+            transform.LookAt(player);
         }
     }
 

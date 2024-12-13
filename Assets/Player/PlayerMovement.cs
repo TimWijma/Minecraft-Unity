@@ -4,7 +4,7 @@ public class PlayerMovement: MonoBehaviour
 {
     public Rigidbody playerBody;
     public float speed = 5f;
-    public float jumpForce = 5f;
+    public float jumpForce = 2f;
 
     void Update()
     {
@@ -18,7 +18,6 @@ public class PlayerMovement: MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Space))
         {
             playerBody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
-        }
-
+        };
     }
 }
