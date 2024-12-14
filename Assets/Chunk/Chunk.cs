@@ -74,12 +74,14 @@ public class Chunk : MonoBehaviour
                             worldZ * noiseScale
                         ) * heightScale
                     );
+                    
+                    int intWorldY = Mathf.FloorToInt(worldY);
 
-                    if (worldY < height)
+                    if (intWorldY < height)
                     {
                         blocks[x, y, z] = BlockType.Dirt;
                     }
-                    else if (worldY == height)
+                    else if (intWorldY == height)
                     {
                         blocks[x, y, z] = BlockType.Grass;
                     }
@@ -106,8 +108,6 @@ public class Chunk : MonoBehaviour
                 {
                     BlockType blockType = blocks[x, y, z];
                     if (blockType == BlockType.Air) continue;
-
-                    // Block block = BlockRegistry.GetBlock(blockType);
 
                     meshBuilder.AddCube(x, y, z);
                 }

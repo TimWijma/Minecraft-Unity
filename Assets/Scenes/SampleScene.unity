@@ -737,7 +737,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 67f975776194fc89890e809e445ccb59, type: 2}
+  - {fileID: 2100000, guid: ec184bdbf73f2dd5a9116dc8523e3c7c, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -812,7 +812,7 @@ MonoBehaviour:
   heightScale: 2
   noiseScale: 0.5
   densityThreshold: 0.5
-  defaultMaterial: {fileID: 2100000, guid: 67f975776194fc89890e809e445ccb59, type: 2}
+  defaultMaterial: {fileID: 2100000, guid: ec184bdbf73f2dd5a9116dc8523e3c7c, type: 2}
   highlightMaterial: {fileID: 2100000, guid: 09b70bde0db1d1b7086cb026e9546c36, type: 2}
 --- !u!1 &1379041670
 GameObject:

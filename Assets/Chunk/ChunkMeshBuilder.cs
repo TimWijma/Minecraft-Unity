@@ -1,16 +1,14 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class ChunkMeshBuilder
 {
     private Vector3[] vertices;
     private int[] triangles;
+    private Vector2[] uvs;
 
     private int currentVertIndex = 0;
     private int currentTriIndex = 0;
-
-    private Dictionary<Vector3, int> vertexIndexMap = new();
 
     private BlockType[,,] blocks;
 
@@ -20,6 +18,7 @@ public class ChunkMeshBuilder
 
         vertices = new Vector3[maxCubes * 8];
         triangles = new int[maxCubes * 36];
+        uvs = new Vector2[maxCubes * 8];
 
         this.blocks = blocks;
     }
@@ -83,36 +82,56 @@ public class ChunkMeshBuilder
         return faceVertices;
     }
 
+    private Vector2[] GetFaceUVs(Block block, Direction direction)
+    {
+        Vector2[] faceUVs = new Vector2[4];
+
+        if (block.hasTexture)
+        {
+            int tilesPerAxis = 16;
+            float tileSize = 1f / tilesPerAxis;
+            Vector2 tileCoords = block.GetTextureCoords(direction);
+
+            float x = tileCoords.x * tileSize;
+            float y = (tilesPerAxis - tileCoords.y - 1) * tileSize;
+
+            faceUVs[0] = new Vector2(x, y);
+            faceUVs[1] = new Vector2(x, y + tileSize);
+            faceUVs[2] = new Vector2(x + tileSize, y + tileSize);
+            faceUVs[3] = new Vector2(x + tileSize, y);
+        }
+        else
+        {
+            faceUVs[0] = new Vector2(0, 0);
+            faceUVs[1] = new Vector2(0, 1);
+            faceUVs[2] = new Vector2(1, 1);
+            faceUVs[3] = new Vector2(1, 0);
+        }
+
+        return faceUVs;
+    }
+
     public void AddFace(Direction direction, int x, int y, int z)
     {
+        Block block = BlockRegistry.GetBlock(blocks[x, y, z]);
+
         Vector3[] faceVertices = GetFaceVertices(direction, x, y, z);
+        Vector2[] faceUVs = GetFaceUVs(block, direction);
 
         for (int i = 0; i < 4; i++)
         {
-            // If the vertex is not in the map, add it to the map and increment the currentVertIndex
-            if (!vertexIndexMap.ContainsKey(faceVertices[i]))
-            {
-                vertices[currentVertIndex] = faceVertices[i];
-                vertexIndexMap[faceVertices[i]] = currentVertIndex;
-                currentVertIndex++;
-            }
+            vertices[currentVertIndex + i] = faceVertices[i];
+            uvs[currentVertIndex + i] = faceUVs[i];
         }
 
-        int[] faceTriangles = new int[]
-        {
-            vertexIndexMap[faceVertices[0]],
-            vertexIndexMap[faceVertices[1]],
-            vertexIndexMap[faceVertices[2]],
-            vertexIndexMap[faceVertices[2]],
-            vertexIndexMap[faceVertices[3]],
-            vertexIndexMap[faceVertices[0]]
-        };
+        triangles[currentTriIndex] = currentVertIndex;
+        triangles[currentTriIndex + 1] = currentVertIndex + 1;
+        triangles[currentTriIndex + 2] = currentVertIndex + 2;
+        triangles[currentTriIndex + 3] = currentVertIndex;
+        triangles[currentTriIndex + 4] = currentVertIndex + 2;
+        triangles[currentTriIndex + 5] = currentVertIndex + 3;
 
-        for (int i = 0; i < 6; i++)
-        {
-            triangles[currentTriIndex + i] = faceTriangles[i];
-        }
-
+        currentVertIndex += 4;
         currentTriIndex += 6;
     }
 
@@ -133,6 +152,7 @@ public class ChunkMeshBuilder
         Mesh mesh = new();
         Array.Resize(ref vertices, currentVertIndex);
         Array.Resize(ref triangles, currentTriIndex);
+        Array.Resize(ref uvs, currentVertIndex);
 
         int offset = blocks.GetLength(0) / 2;
         Vector3 offsetVector = new(offset, offset, offset);
@@ -143,6 +163,7 @@ public class ChunkMeshBuilder
 
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.uv = uvs;
 
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();

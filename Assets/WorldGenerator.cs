@@ -21,7 +21,7 @@ public class MeshGenerator : MonoBehaviour
         player.position = new Vector3(0, 10, 0);
 
         currentChunkCenter = GetChunkCenterForPosition(player.position);
-        GenerateChunk(currentChunkCenter);
+        GenerateChunksInRadius(renderDistance);
         currentChunk = chunks[currentChunkCenter];
         currentChunk.Highlight();
     }
@@ -92,15 +92,9 @@ public class MeshGenerator : MonoBehaviour
                 chunksToRemove.Add(chunkCenter);
                 if (chunkObject != null)
                 {
-                    Destroy(chunkObject.gameObject);
+                    chunkObject.gameObject.SetActive(false);
                 }
             };
-        }
-
-        foreach (var chunk in chunksToRemove)
-        {
-            chunks.Remove(chunk);
-
         }
     }
 
@@ -124,10 +118,7 @@ public class MeshGenerator : MonoBehaviour
                     )
                     {
                         newChunks.Add(chunkCenter);
-                        if (!chunks.ContainsKey(chunkCenter))
-                        {
-                            GenerateChunk(chunkCenter);
-                        }
+                        GenerateChunk(chunkCenter);
                     }
                 }
             }
@@ -146,16 +137,18 @@ public class MeshGenerator : MonoBehaviour
         {
             if (chunks.TryGetValue(pos, out Chunk chunk))
             {
-                Destroy(chunk.gameObject);
-                chunks.Remove(pos);
+                chunk.gameObject.SetActive(false);
             }
-
         }
     }
 
     void GenerateChunk(Vector3 chunkCenter)
     {
-        if (chunks.ContainsKey(chunkCenter)) return;
+        if (chunks.ContainsKey(chunkCenter))
+        {
+            chunks[chunkCenter].gameObject.SetActive(true);
+            return;
+        };
 
         GameObject chunkObject = Instantiate(chunkPrefab, chunkCenter, Quaternion.identity);
         Chunk chunk = chunkObject.GetComponent<Chunk>();
