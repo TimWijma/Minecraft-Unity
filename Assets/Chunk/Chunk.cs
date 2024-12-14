@@ -8,21 +8,15 @@ public class Chunk : MonoBehaviour
     public float noiseScale = 0.5f;
     public float densityThreshold = 0.5f;
 
-
-    public Material defaultMaterial;
-    public Material highlightMaterial;
-
     private BlockType[,,] blocks;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
-    private MeshRenderer meshRenderer;
     private Vector3 chunkCenter;
 
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
-        meshRenderer = GetComponent<MeshRenderer>();
     }
 
     public void InitializeChunk(Vector3 chunkCenter)
@@ -74,7 +68,7 @@ public class Chunk : MonoBehaviour
                             worldZ * noiseScale
                         ) * heightScale
                     );
-                    
+
                     int intWorldY = Mathf.FloorToInt(worldY);
 
                     if (intWorldY < height)
@@ -127,13 +121,4 @@ public class Chunk : MonoBehaviour
         GetComponent<ChunkBorder>().CreateBorder();
     }
 
-    public void Highlight()
-    {
-        meshRenderer.material = highlightMaterial;
-    }
-
-    public void Unhighlight()
-    {
-        meshRenderer.material = defaultMaterial;
-    }
 }

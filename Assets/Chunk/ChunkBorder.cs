@@ -55,4 +55,18 @@ public class ChunkBorder : MonoBehaviour
 
         isCreated = true;
     }
+
+    public void Highlight()
+    {
+        borderColor = Color.green;
+        isCreated = false;
+        CreateBorder();
+    }
+
+    public void Unhighlight()
+    {
+        borderColor = Color.red;
+        isCreated = false;
+        CreateBorder();
+    }
 }

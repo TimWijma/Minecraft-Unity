@@ -23,7 +23,7 @@ public class MeshGenerator : MonoBehaviour
         currentChunkCenter = GetChunkCenterForPosition(player.position);
         GenerateChunksInRadius(renderDistance);
         currentChunk = chunks[currentChunkCenter];
-        currentChunk.Highlight();
+        currentChunk.GetComponent<ChunkBorder>().Highlight();
     }
 
     void Update()
@@ -38,7 +38,7 @@ public class MeshGenerator : MonoBehaviour
 
             if (oldChunk != null)
             {
-                oldChunk.Unhighlight();
+                oldChunk.GetComponent<ChunkBorder>().Unhighlight();
             }
             currentChunkCenter = newChunkCenter;
             ClearChunks();
@@ -48,7 +48,7 @@ public class MeshGenerator : MonoBehaviour
 
             if (chunks.TryGetValue(currentChunkCenter, out currentChunk))
             {
-                currentChunk.Highlight();
+                currentChunk.GetComponent<ChunkBorder>().Highlight();
             }
             else
             {
