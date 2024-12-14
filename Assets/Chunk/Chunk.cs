@@ -5,7 +5,11 @@ using UnityEngine;
 public class Chunk : MonoBehaviour
 {
     public int chunkSize = 16;
-    public int heightScale = 2;
+    public float heightScale = 10;
+    public float noiseScale = 0.5f;
+    public float densityThreshold = 0.5f;
+
+
     public Material defaultMaterial;
     public Material highlightMaterial;
 
@@ -31,6 +35,7 @@ public class Chunk : MonoBehaviour
         gameObject.AddComponent<ChunkData>().Initialize(chunkSize);
         StartCoroutine(CreateChunkComponents());
 
+        GenerateBlocks();
         GenerateMesh();
     }
 
@@ -48,10 +53,8 @@ public class Chunk : MonoBehaviour
         }
     }
 
-    private void GenerateMesh()
+    private void GenerateBlocks()
     {
-        var meshBuilder = new ChunkMeshBuilder(chunkSize * chunkSize);
-
         for (int z = 0; z < chunkSize; z++)
         {
             for (int y = 0; y < chunkSize; y++)
@@ -59,13 +62,57 @@ public class Chunk : MonoBehaviour
                 for (int x = 0; x < chunkSize; x++)
                 {
                     float localX = x - chunkSize / 2f;
+                    float localY = y - chunkSize / 2f;
                     float localZ = z - chunkSize / 2f;
 
                     float worldX = chunkCenter.x + localX;
+                    float worldY = chunkCenter.y + localY;
                     float worldZ = chunkCenter.z + localZ;
 
-                    int y = Mathf.FloorToInt(Mathf.PerlinNoise(worldX / 10f, worldZ / 10f) * heightScale);
-                    meshBuilder.AddCube(new Vector3(localX, y, localZ));
+                    int height = Mathf.FloorToInt(
+                        Mathf.PerlinNoise(
+                            worldX * noiseScale,
+                            worldZ * noiseScale
+                        ) * heightScale
+                    );
+
+                    if (worldY < height)
+                    {
+                        blocks[x, y, z] = BlockType.Dirt;
+                    }
+                    else if (worldY == height)
+                    {
+                        blocks[x, y, z] = BlockType.Grass;
+                    }
+                    else
+                    {
+                        blocks[x, y, z] = BlockType.Air;
+                    }
+                }
+            }
+        }
+    }
+
+    private void GenerateMesh()
+    {
+        var meshBuilder = new ChunkMeshBuilder(chunkSize * chunkSize * chunkSize);
+
+        for (int z = 0; z < chunkSize; z++)
+        {
+            for (int y = 0; y < chunkSize; y++)
+            {
+                for (int x = 0; x < chunkSize; x++)
+                {
+                    BlockType blockType = blocks[x, y, z];
+                    if (blockType == BlockType.Air) continue;
+
+                    // Block block = BlockRegistry.GetBlock(blockType);
+
+                    meshBuilder.AddCube(new Vector3(
+                        x - chunkSize / 2f,
+                        y - chunkSize / 2f,
+                        z - chunkSize / 2f
+                    ));
                 }
             }
         }

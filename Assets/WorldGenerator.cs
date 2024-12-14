@@ -15,11 +15,10 @@ public class MeshGenerator : MonoBehaviour
     private Dictionary<Vector3, Chunk> chunks = new();
     private Chunk currentChunk;
     private int chunksGenerated = 0;
-    private const int BASE_LEVEL = 100;
 
     void Start()
     {
-        player.position = new Vector3(0, BASE_LEVEL + 5, 0);
+        player.position = new Vector3(0, 10, 0);
 
         currentChunkCenter = GetChunkCenterForPosition(player.position);
         GenerateChunk(currentChunkCenter);
