@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
@@ -5,6 +6,7 @@ public class PlayerMovement : MonoBehaviour
     public Rigidbody playerBody;
     public float speed = 5f;
     public float jumpForce = 2f;
+    public TextMeshProUGUI playerCoords;
 
     private Camera playerCamera;
 
@@ -52,5 +54,10 @@ public class PlayerMovement : MonoBehaviour
         {
             transform.forward = movement;
         }
+
+        string xCoords = transform.position.x.ToString("F2");
+        string yCoords = transform.position.y.ToString("F2");
+        string zCoords = transform.position.z.ToString("F2");
+        playerCoords.text = $"X: {xCoords}\nY: {yCoords}\nZ: {zCoords}";
     }
 }

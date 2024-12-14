@@ -25,7 +25,6 @@ public class PlayerFollow : MonoBehaviour
 
         Quaternion rotation = Quaternion.Euler(currentRotationY, currentRotationX, 0);
         Vector3 rotatedOffset = rotation * offset;
-        Debug.Log(rotatedOffset);
 
         transform.position = player.position + rotatedOffset;
         transform.LookAt(player);
