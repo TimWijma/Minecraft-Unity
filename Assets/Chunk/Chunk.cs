@@ -16,37 +16,34 @@ public class Chunk : MonoBehaviour
     private const int seedX = 2000;
     private const int seedZ = 4000;
 
+    private ChunkMeshBuilder meshBuilder;
+
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
+        meshBuilder = new ChunkMeshBuilder(chunkSize);
     }
 
     public void InitializeChunk(Vector3 chunkCenter)
     {
         this.chunkCenter = chunkCenter;
         blocks = new BlockType[chunkSize, chunkSize, chunkSize];
-        InitalizeAir();
 
-        gameObject.AddComponent<ChunkData>().Initialize(chunkSize);
-        StartCoroutine(CreateChunkComponents());
+        if (gameObject == null) {
+            Debug.LogError("Chunk gameObject is null");
+        }
+
+        ChunkBorder border = GetComponent<ChunkBorder>();
+        if (border == null)
+        {
+            border = gameObject.AddComponent<ChunkBorder>();
+        }
+
+        border.CreateBorder(chunkSize);
 
         GenerateBlocks();
         GenerateMesh();
-    }
-
-    private void InitalizeAir()
-    {
-        for (int x = 0; x < blocks.GetLength(0); x++)
-        {
-            for (int y = 0; y < blocks.GetLength(1); y++)
-            {
-                for (int z = 0; z < blocks.GetLength(2); z++)
-                {
-                    blocks[x, y, z] = BlockType.Air;
-                }
-            }
-        }
     }
 
     private void GenerateBlocks()
@@ -81,16 +78,18 @@ public class Chunk : MonoBehaviour
                     {
                         blocks[x, y, z] = BlockType.Grass;
                     }
+                    else
+                    {
+                        blocks[x, y, z] = BlockType.Air;
+                    }
                 }
             }
         }
-
-        Debug.Log("Blocks generated");
     }
 
     private void GenerateMesh()
     {
-        var meshBuilder = new ChunkMeshBuilder(blocks);
+        meshBuilder.UpdateBlocks(blocks);
 
         for (int z = 0; z < chunkSize; z++)
         {
@@ -98,8 +97,7 @@ public class Chunk : MonoBehaviour
             {
                 for (int x = 0; x < chunkSize; x++)
                 {
-                    BlockType blockType = blocks[x, y, z];
-                    if (blockType == BlockType.Air) continue;
+                    if (blocks[x, y, z] == BlockType.Air) continue;
 
                     meshBuilder.AddCube(x, y, z);
                 }
@@ -107,16 +105,17 @@ public class Chunk : MonoBehaviour
         }
 
         Mesh mesh = meshBuilder.BuildMesh();
-
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
     }
 
-    private IEnumerator CreateChunkComponents()
+    public void EnableChunk()
     {
-        yield return new WaitForEndOfFrame();
-
-        GetComponent<ChunkBorder>().CreateBorder();
+        gameObject.SetActive(true);
     }
 
+    public void DisableChunk()
+    {
+        gameObject.SetActive(false);
+    }
 }

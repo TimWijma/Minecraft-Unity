@@ -2,27 +2,49 @@ using UnityEngine;
 
 public class ChunkBorder : MonoBehaviour
 {
-    private ChunkData chunkData;
     private LineRenderer lineRenderer;
     public Color borderColor = Color.red;
     public float lineWidth = 0.03f;
     private bool isCreated = false;
+    private int chunkSize = 16;
+
+    private void Awake()
+    {
+        InitializeLineRenderer();
+    }
 
     private void Start()
     {
+        if (lineRenderer == null)
+        {
+            InitializeLineRenderer();
+        }
+    }
+
+    private void InitializeLineRenderer()
+    {
         lineRenderer = GetComponent<LineRenderer>();
-        chunkData = GetComponent<ChunkData>();
         if (lineRenderer == null)
         {
             lineRenderer = gameObject.AddComponent<LineRenderer>();
         }
+
+        lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
+        lineRenderer.startColor = borderColor;
+        lineRenderer.endColor = borderColor;
+        lineRenderer.startWidth = lineWidth;
+        lineRenderer.endWidth = lineWidth;
+        lineRenderer.loop = false;
+        lineRenderer.useWorldSpace = false;
     }
 
-    public void CreateBorder()
+    public void CreateBorder(int chunkSize)
     {
+        this.chunkSize = chunkSize;
+
         if (isCreated) return;
 
-        float halfSize = chunkData.ChunkSize / 2f;
+        float halfSize = chunkSize / 2f;
 
         lineRenderer.material = new Material(Shader.Find("Sprites/Default"));
         lineRenderer.startColor = borderColor;
@@ -60,13 +82,13 @@ public class ChunkBorder : MonoBehaviour
     {
         borderColor = Color.green;
         isCreated = false;
-        CreateBorder();
+        CreateBorder(chunkSize);
     }
 
     public void Unhighlight()
     {
         borderColor = Color.red;
         isCreated = false;
-        CreateBorder();
+        CreateBorder(chunkSize);
     }
 }

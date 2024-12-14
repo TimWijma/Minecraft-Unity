@@ -12,15 +12,23 @@ public class ChunkMeshBuilder
 
     private BlockType[,,] blocks;
 
-    public ChunkMeshBuilder(BlockType[,,] blocks)
+    public ChunkMeshBuilder(int chunkSize)
     {
-        int maxCubes = blocks.GetLength(0) * blocks.GetLength(1) * blocks.GetLength(2);
-
+        int maxCubes = chunkSize * chunkSize * chunkSize;
         vertices = new Vector3[maxCubes * 8];
         triangles = new int[maxCubes * 36];
         uvs = new Vector2[maxCubes * 8];
+    }
 
+    public void UpdateBlocks(BlockType[,,] blocks)
+    {
         this.blocks = blocks;
+        currentTriIndex = 0;
+        currentVertIndex = 0;
+
+        Array.Clear(vertices, 0, vertices.Length);
+        Array.Clear(triangles, 0, triangles.Length);
+        Array.Clear(uvs, 0, uvs.Length);
     }
 
     public bool IsTransparent(int x, int y, int z)

@@ -16,14 +16,18 @@ public class MeshGenerator : MonoBehaviour
     private Chunk currentChunk;
     private int chunksGenerated = 0;
 
+    private Queue<Vector3> chunksToGenerate = new();
+    private Coroutine activeGenerationCoroutine;
+
     void Start()
     {
-        player.position = new Vector3(0, 10, 0);
+        player.position = new Vector3(0, 40, 0); ;
 
         currentChunkCenter = GetChunkCenterForPosition(player.position);
+        currentChunk = GenerateChunk(currentChunkCenter);
+        Debug.Log($"Current chunk center: {currentChunk}");
+        // currentChunk.GetComponent<ChunkBorder>().Highlight();
         GenerateChunksInRadius(renderDistance);
-        currentChunk = chunks[currentChunkCenter];
-        currentChunk.GetComponent<ChunkBorder>().Highlight();
     }
 
     void Update()
@@ -34,14 +38,21 @@ public class MeshGenerator : MonoBehaviour
 
         if (Vector3.Distance(newChunkCenter, currentChunkCenter) > 0.1f)
         {
-            Chunk oldChunk = currentChunk;
+            Debug.Log($"Moving to new chunk center: {newChunkCenter}");
 
+            Chunk oldChunk = currentChunk;
             if (oldChunk != null)
             {
                 oldChunk.GetComponent<ChunkBorder>().Unhighlight();
             }
+
+            // if (activeGenerationCoroutine != null)
+            // {
+            //     StopCoroutine(activeGenerationCoroutine);
+            //     chunksToGenerate.Clear(); // Clear any pending chunks
+            // }
+
             currentChunkCenter = newChunkCenter;
-            ClearChunks();
             chunksGenerated = 0;
             GenerateChunksInRadius(renderDistance);
             Debug.Log($"Chunks generated: {chunksGenerated}");
@@ -54,6 +65,9 @@ public class MeshGenerator : MonoBehaviour
             {
                 Debug.LogError($"Current chunk not found at {currentChunkCenter}");
             }
+
+
+            ClearChunks();
         }
     }
 
@@ -68,28 +82,14 @@ public class MeshGenerator : MonoBehaviour
 
     void ClearChunks()
     {
-        List<Vector3> chunksToRemove = new();
         float maxDistance = (renderDistance + 0.5f) * chunkSize;
 
-        foreach (var chunk in chunks)
+        foreach (var (chunkCenter, chunkObject) in chunks)
         {
-            Vector3 chunkCenter = chunk.Key;
-            Chunk chunkObject = chunk.Value;
-
-            if (chunkObject == null)
-            {
-                chunksToRemove.Add(chunkCenter);
-                continue;
-            }
-
-            float distance =
-                Mathf.Abs(chunkCenter.x - currentChunkCenter.x) +
-                Mathf.Abs(chunkCenter.y - currentChunkCenter.y) +
-                Mathf.Abs(chunkCenter.z - currentChunkCenter.z);
+            float distance = Vector3.Distance(chunkCenter, currentChunkCenter);
 
             if (distance > maxDistance)
             {
-                chunksToRemove.Add(chunkCenter);
                 if (chunkObject != null)
                 {
                     chunkObject.gameObject.SetActive(false);
@@ -100,7 +100,7 @@ public class MeshGenerator : MonoBehaviour
 
     void GenerateChunksInRadius(int radius)
     {
-        HashSet<Vector3> newChunks = new();
+        Debug.Log($"Generating chunks");
 
         for (int z = -radius; z <= radius; z++)
         {
@@ -112,48 +112,50 @@ public class MeshGenerator : MonoBehaviour
                     Vector3 chunkCenter = currentChunkCenter + offset;
 
                     if (
-                        Mathf.Abs(x) <= radius ||
-                        Mathf.Abs(y) <= radius ||
+                        Mathf.Abs(x) <= radius &&
+                        Mathf.Abs(y) <= radius &&
                         Mathf.Abs(z) <= radius
                     )
                     {
-                        newChunks.Add(chunkCenter);
-                        GenerateChunk(chunkCenter);
+                        chunksToGenerate.Enqueue(chunkCenter);
                     }
                 }
             }
         }
 
-        List<Vector3> chunksToRemove = new();
-        foreach (var chunk in chunks)
-        {
-            if (!newChunks.Contains(chunk.Key))
-            {
-                chunksToRemove.Add(chunk.Key); ;
-            }
-        }
+        Debug.Log($"Chunks to generate: {chunksToGenerate.Count}");
 
-        foreach (var pos in chunksToRemove)
+        if (chunksToGenerate.Count > 0)
         {
-            if (chunks.TryGetValue(pos, out Chunk chunk))
-            {
-                chunk.gameObject.SetActive(false);
-            }
+            activeGenerationCoroutine = StartCoroutine(GenerateChunksCoroutine());
         }
     }
 
-    void GenerateChunk(Vector3 chunkCenter)
+    private IEnumerator GenerateChunksCoroutine()
+    {
+        while (chunksToGenerate.Count > 0)
+        {
+            GenerateChunk(chunksToGenerate.Dequeue());
+            yield return null;
+        }
+        Debug.Log($"Finished generating chunks");
+        activeGenerationCoroutine = null;
+    }
+
+    Chunk GenerateChunk(Vector3 chunkCenter)
     {
         if (chunks.ContainsKey(chunkCenter))
         {
-            chunks[chunkCenter].gameObject.SetActive(true);
-            return;
-        };
+            return chunks[chunkCenter];
+        }
+
 
         GameObject chunkObject = Instantiate(chunkPrefab, chunkCenter, Quaternion.identity);
         Chunk chunk = chunkObject.GetComponent<Chunk>();
         chunk.InitializeChunk(chunkCenter);
         chunksGenerated++;
         chunks.Add(chunkCenter, chunk);
+
+        return chunk;
     }
 }
