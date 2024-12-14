@@ -30,17 +30,13 @@ public class Chunk : MonoBehaviour
         this.chunkCenter = chunkCenter;
         blocks = new BlockType[chunkSize, chunkSize, chunkSize];
 
-        if (gameObject == null) {
-            Debug.LogError("Chunk gameObject is null");
-        }
+        // ChunkBorder border = GetComponent<ChunkBorder>();
+        // if (border == null)
+        // {
+        //     border = gameObject.AddComponent<ChunkBorder>();
+        // }
 
-        ChunkBorder border = GetComponent<ChunkBorder>();
-        if (border == null)
-        {
-            border = gameObject.AddComponent<ChunkBorder>();
-        }
-
-        border.CreateBorder(chunkSize);
+        // border.CreateBorder(chunkSize);
 
         GenerateBlocks();
         GenerateMesh();

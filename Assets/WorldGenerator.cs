@@ -40,32 +40,31 @@ public class MeshGenerator : MonoBehaviour
         {
             Debug.Log($"Moving to new chunk center: {newChunkCenter}");
 
-            Chunk oldChunk = currentChunk;
-            if (oldChunk != null)
-            {
-                oldChunk.GetComponent<ChunkBorder>().Unhighlight();
-            }
-
-            // if (activeGenerationCoroutine != null)
+            // Chunk oldChunk = currentChunk;
+            // if (oldChunk != null)
             // {
-            //     StopCoroutine(activeGenerationCoroutine);
-            //     chunksToGenerate.Clear(); // Clear any pending chunks
+            //     oldChunk.GetComponent<ChunkBorder>().Unhighlight();
             // }
+
+            if (activeGenerationCoroutine != null)
+            {
+                StopCoroutine(activeGenerationCoroutine);
+                chunksToGenerate.Clear(); // Clear any pending chunks
+            }
 
             currentChunkCenter = newChunkCenter;
             chunksGenerated = 0;
             GenerateChunksInRadius(renderDistance);
             Debug.Log($"Chunks generated: {chunksGenerated}");
 
-            if (chunks.TryGetValue(currentChunkCenter, out currentChunk))
-            {
-                currentChunk.GetComponent<ChunkBorder>().Highlight();
-            }
-            else
-            {
-                Debug.LogError($"Current chunk not found at {currentChunkCenter}");
-            }
-
+            // if (chunks.TryGetValue(currentChunkCenter, out currentChunk))
+            // {
+            //     currentChunk.GetComponent<ChunkBorder>().Highlight();
+            // }
+            // else
+            // {
+            //     Debug.LogError($"Current chunk not found at {currentChunkCenter}");
+            // }
 
             ClearChunks();
         }
@@ -84,23 +83,45 @@ public class MeshGenerator : MonoBehaviour
     {
         float maxDistance = (renderDistance + 0.5f) * chunkSize;
 
+        HashSet<Vector3> chunksToKeep = new();
+        for (int z = -renderDistance; z <= renderDistance; z++)
+        {
+            for (int y = -renderDistance; y <= renderDistance; y++)
+            {
+                for (int x = -renderDistance; x <= renderDistance; x++)
+                {
+                    Vector3 offset = new(x * chunkSize, y * chunkSize, z * chunkSize);
+                    Vector3 chunkCenter = currentChunkCenter + offset;
+
+                    if (Vector3.Distance(chunkCenter, currentChunkCenter) <= maxDistance)
+                    {
+                        chunksToKeep.Add(chunkCenter);
+                    }
+                }
+            }
+        }
+
+
         foreach (var (chunkCenter, chunkObject) in chunks)
         {
-            float distance = Vector3.Distance(chunkCenter, currentChunkCenter);
-
-            if (distance > maxDistance)
+            if (chunksToKeep.Contains(chunkCenter))
             {
                 if (chunkObject != null)
                 {
-                    chunkObject.gameObject.SetActive(false);
+                    chunkObject.gameObject.SetActive(true);
                 }
-            };
+            }
+            else
+            {
+                chunkObject.gameObject.SetActive(false);
+            }
         }
     }
 
     void GenerateChunksInRadius(int radius)
     {
         Debug.Log($"Generating chunks");
+        float maxDistance = (radius + 0.5f) * chunkSize;
 
         for (int z = -radius; z <= radius; z++)
         {
@@ -111,11 +132,7 @@ public class MeshGenerator : MonoBehaviour
                     Vector3 offset = new(x * chunkSize, y * chunkSize, z * chunkSize);
                     Vector3 chunkCenter = currentChunkCenter + offset;
 
-                    if (
-                        Mathf.Abs(x) <= radius &&
-                        Mathf.Abs(y) <= radius &&
-                        Mathf.Abs(z) <= radius
-                    )
+                    if (Vector3.Distance(chunkCenter, currentChunkCenter) <= maxDistance)
                     {
                         chunksToGenerate.Enqueue(chunkCenter);
                     }
@@ -133,9 +150,19 @@ public class MeshGenerator : MonoBehaviour
 
     private IEnumerator GenerateChunksCoroutine()
     {
+        const float maxTimePerFrame = 1f / 60f;
         while (chunksToGenerate.Count > 0)
         {
-            GenerateChunk(chunksToGenerate.Dequeue());
+            float startTime = Time.realtimeSinceStartup;
+            while (chunksToGenerate.Count > 0)
+            {
+                if (Time.realtimeSinceStartup - startTime > maxTimePerFrame)
+                {
+                    yield return null;
+                    startTime = Time.realtimeSinceStartup;
+                }
+                GenerateChunk(chunksToGenerate.Dequeue());
+            }
             yield return null;
         }
         Debug.Log($"Finished generating chunks");
@@ -144,11 +171,12 @@ public class MeshGenerator : MonoBehaviour
 
     Chunk GenerateChunk(Vector3 chunkCenter)
     {
-        if (chunks.ContainsKey(chunkCenter))
+        if (chunks.ContainsKey(chunkCenter) && chunks[chunkCenter] != null)
         {
+            chunks[chunkCenter].gameObject.SetActive(true);
+
             return chunks[chunkCenter];
         }
-
 
         GameObject chunkObject = Instantiate(chunkPrefab, chunkCenter, Quaternion.identity);
         Chunk chunk = chunkObject.GetComponent<Chunk>();
