@@ -5,13 +5,16 @@ public class Chunk : MonoBehaviour
 {
     public int chunkSize = 16;
     public float heightScale = 10;
-    public float noiseScale = 0.5f;
+    public float noiseScale = 0.02f;
     public float densityThreshold = 0.5f;
 
     private BlockType[,,] blocks;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     private Vector3 chunkCenter;
+
+    private const int seedX = 2000;
+    private const int seedZ = 4000;
 
     private void Awake()
     {
@@ -64,13 +67,12 @@ public class Chunk : MonoBehaviour
 
                     int height = Mathf.FloorToInt(
                         Mathf.PerlinNoise(
-                            worldX * noiseScale,
-                            worldZ * noiseScale
+                            (worldX + seedX) * noiseScale,
+                            (worldZ + seedZ) * noiseScale
                         ) * heightScale
                     );
 
                     int intWorldY = Mathf.FloorToInt(worldY);
-
                     if (intWorldY < height)
                     {
                         blocks[x, y, z] = BlockType.Dirt;
@@ -78,10 +80,6 @@ public class Chunk : MonoBehaviour
                     else if (intWorldY == height)
                     {
                         blocks[x, y, z] = BlockType.Grass;
-                    }
-                    else
-                    {
-                        blocks[x, y, z] = BlockType.Air;
                     }
                 }
             }

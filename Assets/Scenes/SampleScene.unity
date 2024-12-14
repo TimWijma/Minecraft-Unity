@@ -423,7 +423,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: 16
-  renderDistance: 1
+  renderDistance: 3
   player: {fileID: 1379041674}
   chunkPrefab: {fileID: 1228084881}
 --- !u!4 &476832795
@@ -809,11 +809,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: 16
-  heightScale: 2
-  noiseScale: 0.5
+  heightScale: 20
+  noiseScale: 0.02
   densityThreshold: 0.5
-  defaultMaterial: {fileID: 2100000, guid: ec184bdbf73f2dd5a9116dc8523e3c7c, type: 2}
-  highlightMaterial: {fileID: 2100000, guid: 09b70bde0db1d1b7086cb026e9546c36, type: 2}
 --- !u!1 &1379041670
 GameObject:
   m_ObjectHideFlags: 0

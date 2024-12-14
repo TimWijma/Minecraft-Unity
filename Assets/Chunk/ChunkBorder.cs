@@ -5,7 +5,7 @@ public class ChunkBorder : MonoBehaviour
     private ChunkData chunkData;
     private LineRenderer lineRenderer;
     public Color borderColor = Color.red;
-    public float lineWidth = 0.1f;
+    public float lineWidth = 0.03f;
     private bool isCreated = false;
 
     private void Start()
