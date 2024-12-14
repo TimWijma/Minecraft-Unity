@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using Unity.VisualScripting;
 using UnityEngine;
 
-public class MeshGenerator : MonoBehaviour
+public class WorldGenerator : MonoBehaviour
 {
     public int chunkSize = 16;
     public int renderDistance = 5;
@@ -78,6 +78,17 @@ public class MeshGenerator : MonoBehaviour
 
         return new Vector3(x, y, z);
     }
+
+    public Chunk GetChunkAtPosition(Vector3 position)
+    {
+        Vector3 chunkCenter = GetChunkCenterForPosition(position);
+        if (chunks.TryGetValue(chunkCenter, out Chunk chunk))
+        {
+            return chunk;
+        }
+
+        return null;
+    } 
 
     void ClearChunks()
     {

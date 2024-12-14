@@ -12,6 +12,7 @@ public class PlayerFollow : MonoBehaviour
     void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
+        Cursor.visible = true;
     }
 
     void LateUpdate()

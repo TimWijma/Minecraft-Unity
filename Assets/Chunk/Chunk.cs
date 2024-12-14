@@ -114,4 +114,33 @@ public class Chunk : MonoBehaviour
     {
         gameObject.SetActive(false);
     }
+
+    public BlockType GetBlockType(Vector3 worldPosition)
+    {
+        int x = Mathf.FloorToInt(worldPosition.x - chunkCenter.x + chunkSize / 2f);
+        int y = Mathf.FloorToInt(worldPosition.y - chunkCenter.y + chunkSize / 2f);
+        int z = Mathf.FloorToInt(worldPosition.z - chunkCenter.z + chunkSize / 2f);
+
+        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize || z < 0 || z >= chunkSize)
+        {
+            return BlockType.Air;
+        }
+
+        return blocks[x, y, z];
+    }
+
+    public void SetBlockType(Vector3 worldPosition, BlockType blockType)
+    {
+        int x = Mathf.FloorToInt(worldPosition.x - chunkCenter.x + chunkSize / 2f);
+        int y = Mathf.FloorToInt(worldPosition.y - chunkCenter.y + chunkSize / 2f);
+        int z = Mathf.FloorToInt(worldPosition.z - chunkCenter.z + chunkSize / 2f);
+
+        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize || z < 0 || z >= chunkSize)
+        {
+            return;
+        }
+
+        blocks[x, y, z] = blockType;
+        GenerateMesh();
+    }
 }
