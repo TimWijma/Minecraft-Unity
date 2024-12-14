@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Security.Cryptography;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour
@@ -91,11 +90,13 @@ public class Chunk : MonoBehaviour
                 }
             }
         }
+
+        Debug.Log("Blocks generated");
     }
 
     private void GenerateMesh()
     {
-        var meshBuilder = new ChunkMeshBuilder(chunkSize * chunkSize * chunkSize);
+        var meshBuilder = new ChunkMeshBuilder(blocks);
 
         for (int z = 0; z < chunkSize; z++)
         {
@@ -108,11 +109,7 @@ public class Chunk : MonoBehaviour
 
                     // Block block = BlockRegistry.GetBlock(blockType);
 
-                    meshBuilder.AddCube(new Vector3(
-                        x - chunkSize / 2f,
-                        y - chunkSize / 2f,
-                        z - chunkSize / 2f
-                    ));
+                    meshBuilder.AddCube(x, y, z);
                 }
             }
         }
@@ -127,7 +124,6 @@ public class Chunk : MonoBehaviour
     {
         yield return new WaitForEndOfFrame();
 
-        GetComponent<ChunkMarker>().CreateMarker();
         GetComponent<ChunkBorder>().CreateBorder();
     }
 
