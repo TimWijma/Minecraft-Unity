@@ -6,6 +6,11 @@ public class ChunkMeshBuilder
     private Vector3[] vertices;
     private int[] triangles;
     private Vector2[] uvs;
+    private Vector3[] normals;
+
+    private readonly int maxVertices;
+    private readonly int maxTriangles;
+
 
     private int currentVertIndex = 0;
     private int currentTriIndex = 0;
@@ -15,9 +20,14 @@ public class ChunkMeshBuilder
     public ChunkMeshBuilder(int chunkSize)
     {
         int maxCubes = chunkSize * chunkSize * chunkSize;
-        vertices = new Vector3[maxCubes * 8];
-        triangles = new int[maxCubes * 36];
-        uvs = new Vector2[maxCubes * 8];
+
+        maxVertices = maxCubes * 8;
+        maxTriangles = maxCubes * 36;
+
+        vertices = new Vector3[maxVertices];
+        triangles = new int[maxTriangles];
+        uvs = new Vector2[maxVertices];
+        normals = new Vector3[maxVertices];
     }
 
     public void UpdateBlocks(BlockType[,,] blocks)
@@ -26,9 +36,10 @@ public class ChunkMeshBuilder
         currentTriIndex = 0;
         currentVertIndex = 0;
 
-        Array.Clear(vertices, 0, vertices.Length);
-        Array.Clear(triangles, 0, triangles.Length);
-        Array.Clear(uvs, 0, uvs.Length);
+        vertices = new Vector3[maxVertices];
+        triangles = new int[maxTriangles];
+        uvs = new Vector2[maxVertices];
+        normals = new Vector3[maxVertices];
     }
 
     public bool IsTransparent(int x, int y, int z)
@@ -121,15 +132,28 @@ public class ChunkMeshBuilder
 
     public void AddFace(Direction direction, int x, int y, int z)
     {
+
         Block block = BlockRegistry.GetBlock(blocks[x, y, z]);
 
         Vector3[] faceVertices = GetFaceVertices(direction, x, y, z);
         Vector2[] faceUVs = GetFaceUVs(block, direction);
 
+        Vector3 normal = direction switch
+        {
+            Direction.Left => Vector3.left,
+            Direction.Right => Vector3.right,
+            Direction.Front => Vector3.forward,
+            Direction.Back => Vector3.back,
+            Direction.Top => Vector3.up,
+            Direction.Bottom => Vector3.down,
+            _ => Vector3.zero
+        };
+
         for (int i = 0; i < 4; i++)
         {
             vertices[currentVertIndex + i] = faceVertices[i];
             uvs[currentVertIndex + i] = faceUVs[i];
+            normals[currentVertIndex + i] = normal;
         }
 
         triangles[currentTriIndex] = currentVertIndex;
@@ -161,6 +185,7 @@ public class ChunkMeshBuilder
         Array.Resize(ref vertices, currentVertIndex);
         Array.Resize(ref triangles, currentTriIndex);
         Array.Resize(ref uvs, currentVertIndex);
+        Array.Resize(ref normals, currentVertIndex);
 
         int offset = blocks.GetLength(0) / 2;
         Vector3 offsetVector = new(offset, offset, offset);
@@ -172,8 +197,8 @@ public class ChunkMeshBuilder
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
+        mesh.normals = normals;
 
-        mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
         return mesh;

@@ -11,6 +11,9 @@ public class WorldGenerator : MonoBehaviour
     public Transform player;
     public GameObject chunkPrefab;
 
+    private const int WORLD_DEPTH = -8;
+    private const int WORLD_HEIGHT = 100;
+
     private Vector3 currentChunkCenter;
     private Dictionary<Vector3, Chunk> chunks = new();
     private Chunk currentChunk;
@@ -39,12 +42,6 @@ public class WorldGenerator : MonoBehaviour
         if (Vector3.Distance(newChunkCenter, currentChunkCenter) > 0.1f)
         {
             Debug.Log($"Moving to new chunk center: {newChunkCenter}");
-
-            // Chunk oldChunk = currentChunk;
-            // if (oldChunk != null)
-            // {
-            //     oldChunk.GetComponent<ChunkBorder>().Unhighlight();
-            // }
 
             if (activeGenerationCoroutine != null)
             {

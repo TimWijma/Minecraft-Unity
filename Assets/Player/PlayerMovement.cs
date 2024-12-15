@@ -3,42 +3,28 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public Rigidbody playerBody;
+    public CharacterController controller;
+    
     public float speed = 5f;
-    public float jumpForce = 2f;
-    public TextMeshProUGUI playerCoords;
+    public float gravity = -9.81f;
+    public float jumpHeight = 2f;
 
-    private Camera playerCamera;
+    private Vector3 velocity;
 
-    void Start()
-    {
-        playerCamera = Camera.main;
-    }
+    public TextMeshProUGUI coordsText;
 
     void Update()
     {
         float moveHorizontal = Input.GetAxis("Horizontal");
         float moveVertical = Input.GetAxis("Vertical");
 
-        Vector3 forward = playerCamera.transform.forward;
-        Vector3 right = playerCamera.transform.right;
+        Vector3 movement = transform.right * moveHorizontal + transform.forward * moveVertical;
 
-        forward.y = 0f;
-        right.y = 0f;
-        forward.Normalize();
-        right.Normalize();
-
-        Vector3 movement = (forward * moveVertical + right * moveHorizontal).normalized;
-
-        playerBody.linearVelocity = new(
-            movement.x * speed,
-            playerBody.linearVelocity.y,
-            movement.z * speed
-        );
+        controller.Move(speed * Time.deltaTime * movement);
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            playerBody.AddForce(Vector3.up * jumpForce, ForceMode.Impulse);
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
         }
 
         if (Input.GetKeyDown(KeyCode.LeftControl))
@@ -50,14 +36,12 @@ public class PlayerMovement : MonoBehaviour
             speed = 5f;
         }
 
-        if (movement != Vector3.zero)
-        {
-            transform.forward = movement;
-        }
+        velocity.y += gravity * Time.deltaTime;
+        controller.Move(velocity * Time.deltaTime);
 
         string xCoords = transform.position.x.ToString("F2");
         string yCoords = transform.position.y.ToString("F2");
         string zCoords = transform.position.z.ToString("F2");
-        playerCoords.text = $"X: {xCoords}\nY: {yCoords}\nZ: {zCoords}";
+        coordsText.text = $"X: {xCoords}\nY: {yCoords}\nZ: {zCoords}";
     }
 }

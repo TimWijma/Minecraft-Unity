@@ -23,6 +23,8 @@ public class ChunkBorder : MonoBehaviour
 
     private void InitializeLineRenderer()
     {
+        return;
+
         lineRenderer = GetComponent<LineRenderer>();
         if (lineRenderer == null)
         {
