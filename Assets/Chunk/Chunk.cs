@@ -52,13 +52,17 @@ public class Chunk : MonoBehaviour
                     {
                         blocks[x, y, z] = BlockType.Bedrock;
                     }
-                    else if (intWorldY < height)
-                    {
-                        blocks[x, y, z] = BlockType.Dirt;
-                    }
                     else if (intWorldY == height)
                     {
                         blocks[x, y, z] = BlockType.Grass;
+                    }
+                    else if (intWorldY < height - 3)
+                    {
+                        blocks[x, y, z] = BlockType.Stone;
+                    }
+                    else if (intWorldY < height)
+                    {
+                        blocks[x, y, z] = BlockType.Dirt;
                     }
                     else
                     {
@@ -98,7 +102,7 @@ public class Chunk : MonoBehaviour
         float frequency = 1;
         float maxAmplitude = 0;
 
-        float heightScale = 64f;
+        float heightScale = 128f;
         float noiseScale = 0.01f;
         float octaves = 4;
 
