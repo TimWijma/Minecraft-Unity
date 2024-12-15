@@ -7,7 +7,7 @@ public class Chunk : MonoBehaviour
     private BlockType[,,] blocks;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
-    private Vector3 chunkCenter;
+    private Vector3Int chunkIndex;
 
     private const int seedX = 2000;
     private const int seedZ = 4000;
@@ -23,9 +23,9 @@ public class Chunk : MonoBehaviour
         meshBuilder = new ChunkMeshBuilder(chunkSize);
     }
 
-    public void InitializeChunk(Vector3 chunkCenter)
+    public void InitializeChunk(Vector3Int chunkIndex)
     {
-        this.chunkCenter = chunkCenter;
+        this.chunkIndex = chunkIndex;
         blocks = new BlockType[chunkSize, chunkSize, chunkSize];
 
         GenerateBlocks();
@@ -40,19 +40,15 @@ public class Chunk : MonoBehaviour
             {
                 for (int x = 0; x < chunkSize; x++)
                 {
-                    float localX = x - chunkSize / 2f;
-                    float localY = y - chunkSize / 2f;
-                    float localZ = z - chunkSize / 2f;
-
-                    float worldX = chunkCenter.x + localX;
-                    float worldY = chunkCenter.y + localY;
-                    float worldZ = chunkCenter.z + localZ;
+                    float worldX = chunkIndex.x * chunkSize + x;
+                    float worldY = chunkIndex.y * chunkSize + y;
+                    float worldZ = chunkIndex.z * chunkSize + z;
 
                     int height = CalculateHeight(Mathf.FloorToInt(worldX), Mathf.FloorToInt(worldZ), seedX, seedZ);
 
                     int intWorldY = Mathf.FloorToInt(worldY);
 
-                    if (intWorldY == WORLD_DEPTH - chunkSize / 2) // World depth is center of the chunk, so we need to offset by half the chunk size
+                    if (intWorldY == WORLD_DEPTH) // World depth is center of the chunk, so we need to offset by half the chunk size
                     {
                         blocks[x, y, z] = BlockType.Bedrock;
                     }
@@ -133,30 +129,30 @@ public class Chunk : MonoBehaviour
 
     public BlockType GetBlockType(Vector3 worldPosition)
     {
-        int x = Mathf.FloorToInt(worldPosition.x - chunkCenter.x + chunkSize / 2f);
-        int y = Mathf.FloorToInt(worldPosition.y - chunkCenter.y + chunkSize / 2f);
-        int z = Mathf.FloorToInt(worldPosition.z - chunkCenter.z + chunkSize / 2f);
+        int chunkX = Mathf.FloorToInt(worldPosition.x - (chunkIndex.x * chunkSize));
+        int chunkY = Mathf.FloorToInt(worldPosition.y - (chunkIndex.y * chunkSize));
+        int chunkZ = Mathf.FloorToInt(worldPosition.z - (chunkIndex.z * chunkSize));
 
-        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize || z < 0 || z >= chunkSize)
+        if (chunkX < 0 || chunkX >= chunkSize || chunkY < 0 || chunkY >= chunkSize || chunkZ < 0 || chunkZ >= chunkSize)
         {
             return BlockType.Air;
         }
 
-        return blocks[x, y, z];
+        return blocks[chunkX, chunkY, chunkZ];
     }
 
     public void SetBlockType(Vector3 worldPosition, BlockType blockType)
     {
-        int x = Mathf.FloorToInt(worldPosition.x - chunkCenter.x + chunkSize / 2f);
-        int y = Mathf.FloorToInt(worldPosition.y - chunkCenter.y + chunkSize / 2f);
-        int z = Mathf.FloorToInt(worldPosition.z - chunkCenter.z + chunkSize / 2f);
+        int chunkX = Mathf.FloorToInt(worldPosition.x - (chunkIndex.x * chunkSize));
+        int chunkY = Mathf.FloorToInt(worldPosition.y - (chunkIndex.y * chunkSize));
+        int chunkZ = Mathf.FloorToInt(worldPosition.z - (chunkIndex.z * chunkSize));
 
-        if (x < 0 || x >= chunkSize || y < 0 || y >= chunkSize || z < 0 || z >= chunkSize)
+        if (chunkX < 0 || chunkX >= chunkSize || chunkY < 0 || chunkY >= chunkSize || chunkZ < 0 || chunkZ >= chunkSize)
         {
             return;
         }
 
-        blocks[x, y, z] = blockType;
+        blocks[chunkX, chunkY, chunkZ] = blockType;
         GenerateMesh();
     }
 }

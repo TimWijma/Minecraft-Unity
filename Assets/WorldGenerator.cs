@@ -14,20 +14,20 @@ public class WorldGenerator : MonoBehaviour
     private const int WORLD_DEPTH = -8;
     private const int WORLD_HEIGHT = 100;
 
-    private Vector3 currentChunkCenter;
-    private Dictionary<Vector3, Chunk> chunks = new();
+    private Vector3Int currentChunkIndex;
+    private Dictionary<Vector3Int, Chunk> chunks = new();
     private Chunk currentChunk;
     private int chunksGenerated = 0;
 
-    private Queue<Vector3> chunksToGenerate = new();
+    private Queue<Vector3Int> chunksToGenerate = new();
     private Coroutine activeGenerationCoroutine;
 
     void Start()
     {
         player.position = new Vector3(0, 40, 0); ;
 
-        currentChunkCenter = GetChunkCenterForPosition(player.position);
-        currentChunk = GenerateChunk(currentChunkCenter);
+        currentChunkIndex = GetChunkIndexForPosition(player.position);
+        currentChunk = GenerateChunk(currentChunkIndex);
         Debug.Log($"Current chunk center: {currentChunk}");
         // currentChunk.GetComponent<ChunkBorder>().Highlight();
         GenerateChunksInRadius(renderDistance);
@@ -37,11 +37,11 @@ public class WorldGenerator : MonoBehaviour
     {
         if (player == null || currentChunk == null) return;
 
-        Vector3 newChunkCenter = GetChunkCenterForPosition(player.position);
+        Vector3Int newChunkIndex = GetChunkIndexForPosition(player.position);
 
-        if (newChunkCenter != currentChunkCenter)
+        if (newChunkIndex != currentChunkIndex)
         {
-            Debug.Log($"Moving to new chunk center: {newChunkCenter}");
+            Debug.Log($"Moving to new chunk center: {newChunkIndex}");
 
             if (activeGenerationCoroutine != null)
             {
@@ -49,7 +49,7 @@ public class WorldGenerator : MonoBehaviour
                 chunksToGenerate.Clear(); // Clear any pending chunks
             }
 
-            currentChunkCenter = newChunkCenter;
+            currentChunkIndex = newChunkIndex;
             chunksGenerated = 0;
             GenerateChunksInRadius(renderDistance);
             Debug.Log($"Chunks generated: {chunksGenerated}");
@@ -58,19 +58,19 @@ public class WorldGenerator : MonoBehaviour
         }
     }
 
-    Vector3 GetChunkCenterForPosition(Vector3 position)
+    Vector3Int GetChunkIndexForPosition(Vector3 position)
     {
-        float x = Mathf.Floor(position.x / chunkSize) * chunkSize + (chunkSize / 2f);
-        float y = Mathf.Floor(position.y / chunkSize) * chunkSize + (chunkSize / 2f);
-        float z = Mathf.Floor(position.z / chunkSize) * chunkSize + (chunkSize / 2f);
+        int x = Mathf.FloorToInt(position.x / chunkSize);
+        int y = Mathf.FloorToInt(position.y / chunkSize);
+        int z = Mathf.FloorToInt(position.z / chunkSize);
 
-        return new Vector3(x, y, z);
+        return new Vector3Int(x, y, z);
     }
 
     public Chunk GetChunkAtPosition(Vector3 position)
     {
-        Vector3 chunkCenter = GetChunkCenterForPosition(position);
-        if (chunks.TryGetValue(chunkCenter, out Chunk chunk))
+        Vector3Int chunkIndex = GetChunkIndexForPosition(position);
+        if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
         {
             return chunk;
         }
@@ -80,29 +80,27 @@ public class WorldGenerator : MonoBehaviour
 
     void ClearChunks()
     {
-        float maxDistance = (renderDistance + 0.5f) * chunkSize;
+        float maxDistance = renderDistance + 0.5f;
 
-        HashSet<Vector3> chunksToKeep = new();
+        HashSet<Vector3Int> chunksToKeep = new();
         for (int z = -renderDistance; z <= renderDistance; z++)
         {
             for (int y = -renderDistance; y <= renderDistance; y++)
             {
                 for (int x = -renderDistance; x <= renderDistance; x++)
                 {
-                    Vector3 offset = new(x * chunkSize, y * chunkSize, z * chunkSize);
-                    Vector3 chunkCenter = currentChunkCenter + offset;
-
-                    if (Vector3.Distance(chunkCenter, currentChunkCenter) <= maxDistance)
+                    Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
+                    if (Vector3.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
                     {
-                        chunksToKeep.Add(chunkCenter);
+                        chunksToKeep.Add(chunkIndex);
                     }
                 }
             }
         }
 
-        foreach (var (chunkCenter, chunkObject) in chunks)
+        foreach (var (chunkIndex, chunkObject) in chunks)
         {
-            if (chunksToKeep.Contains(chunkCenter))
+            if (chunksToKeep.Contains(chunkIndex))
             {
                 if (chunkObject != null)
                 {
@@ -119,7 +117,7 @@ public class WorldGenerator : MonoBehaviour
     void GenerateChunksInRadius(int radius)
     {
         Debug.Log($"Generating chunks");
-        float maxDistance = (radius + 0.5f) * chunkSize;
+        float maxDistance = radius + 0.5f;
 
         for (int z = -radius; z <= radius; z++)
         {
@@ -127,14 +125,13 @@ public class WorldGenerator : MonoBehaviour
             {
                 for (int x = -radius; x <= radius; x++)
                 {
-                    Vector3 offset = new(x * chunkSize, y * chunkSize, z * chunkSize);
-                    Vector3 chunkCenter = currentChunkCenter + offset;
+                    Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
 
-                    if (chunkCenter.y < WORLD_DEPTH || chunkCenter.y > WORLD_HEIGHT) continue;
+                    if (chunkIndex.y < WORLD_DEPTH || chunkIndex.y > WORLD_HEIGHT) continue;
 
-                    if (Vector3.Distance(chunkCenter, currentChunkCenter) <= maxDistance)
+                    if (Vector3.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
                     {
-                        chunksToGenerate.Enqueue(chunkCenter);
+                        chunksToGenerate.Enqueue(chunkIndex);
                     }
                 }
             }
@@ -169,22 +166,23 @@ public class WorldGenerator : MonoBehaviour
         activeGenerationCoroutine = null;
     }
 
-    Chunk GenerateChunk(Vector3 chunkCenter)
+    Chunk GenerateChunk(Vector3Int chunkIndex)
     {
-        if (chunkCenter.y < WORLD_DEPTH || chunkCenter.y > WORLD_HEIGHT) return null;
+        if (chunkIndex.y < WORLD_DEPTH || chunkIndex.y > WORLD_HEIGHT) return null;
 
-        if (chunks.ContainsKey(chunkCenter) && chunks[chunkCenter] != null)
+        if (chunks.ContainsKey(chunkIndex) && chunks[chunkIndex] != null)
         {
-            chunks[chunkCenter].gameObject.SetActive(true);
+            chunks[chunkIndex].gameObject.SetActive(true);
 
-            return chunks[chunkCenter];
+            return chunks[chunkIndex];
         }
 
-        GameObject chunkObject = Instantiate(chunkPrefab, chunkCenter, Quaternion.identity);
+        Vector3Int chunkPosition = chunkIndex * chunkSize;
+        GameObject chunkObject = Instantiate(chunkPrefab, chunkPosition, Quaternion.identity);
         Chunk chunk = chunkObject.GetComponent<Chunk>();
-        chunk.InitializeChunk(chunkCenter);
+        chunk.InitializeChunk(chunkIndex);
         chunksGenerated++;
-        chunks.Add(chunkCenter, chunk);
+        chunks.Add(chunkIndex, chunk);
 
         return chunk;
     }

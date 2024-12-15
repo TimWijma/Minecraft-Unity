@@ -187,13 +187,6 @@ public class ChunkMeshBuilder
         Array.Resize(ref uvs, currentVertIndex);
         Array.Resize(ref normals, currentVertIndex);
 
-        int offset = blocks.GetLength(0) / 2;
-        Vector3 offsetVector = new(offset, offset, offset);
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            vertices[i] -= offsetVector;
-        }
-
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
