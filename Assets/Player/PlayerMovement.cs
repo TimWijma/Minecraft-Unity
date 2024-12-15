@@ -7,7 +7,10 @@ public class PlayerMovement : MonoBehaviour
     
     public float speed = 5f;
     public float gravity = -9.81f;
-    public float jumpHeight = 2f;
+    public float jumpHeight = 1.5f;
+
+    private bool isGrounded;
+    private float groundDistance = 0.4f;
 
     private Vector3 velocity;
 
@@ -15,6 +18,13 @@ public class PlayerMovement : MonoBehaviour
 
     void Update()
     {
+        // isGrounded = Physics.Raycast(transform.position, Vector3.down, groundDistance);
+
+        // if (isGrounded && velocity.y < 0)
+        // {
+        //     velocity.y = -2f;
+        // }
+
         float moveHorizontal = Input.GetAxis("Horizontal");
         float moveVertical = Input.GetAxis("Vertical");
 

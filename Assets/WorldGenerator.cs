@@ -60,9 +60,9 @@ public class WorldGenerator : MonoBehaviour
 
     Vector3Int GetChunkIndexForPosition(Vector3 position)
     {
-        int x = Mathf.RoundToInt(position.x / chunkSize);
-        int y = Mathf.RoundToInt(position.y / chunkSize);
-        int z = Mathf.RoundToInt(position.z / chunkSize);
+        int x = Mathf.FloorToInt(position.x / chunkSize);
+        int y = Mathf.FloorToInt(position.y / chunkSize);
+        int z = Mathf.FloorToInt(position.z / chunkSize);
 
         return new Vector3Int(x, y, z);
     }
