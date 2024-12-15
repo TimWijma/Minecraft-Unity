@@ -54,35 +54,26 @@ public class PlayerMine : MonoBehaviour
     void PlaceBlock()
     {
         Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
-        RaycastHit[] hits = Physics.RaycastAll(ray, reach);
-
-        Vector3 previousBlock = Vector3.zero;
-        foreach (RaycastHit hit in hits)
+        if (Physics.Raycast(ray, out RaycastHit hit, reach))
         {
-            Vector3 hitBlock = new Vector3(
-                Mathf.Floor(hit.point.x - hit.normal.x / 2),
-                Mathf.Floor(hit.point.y - hit.normal.y / 2),
-                Mathf.Floor(hit.point.z - hit.normal.z / 2)
+            Vector3 hitBlock = new(
+                Mathf.Floor(hit.point.x + hit.normal.x / 2),
+                Mathf.Floor(hit.point.y + hit.normal.y / 2),
+                Mathf.Floor(hit.point.z + hit.normal.z / 2)
             );
 
             Chunk chunk = worldGenerator.GetChunkAtPosition(hitBlock);
             if (chunk != null)
             {
                 BlockType blockType = chunk.GetBlockType(hitBlock);
+                Block block = BlockRegistry.GetBlock(blockType);
 
-                // It should find a block that is NOT air
-                // If it finds an air block, it should continue to the next block
-                if (blockType == BlockType.Air)
-                {
-                    previousBlock = hitBlock;
-                    continue;
-                }
+                Debug.Log($"Block at {hitBlock} is {blockType}");
 
-                // If it finds a non-air block, it should place the block in the previous block
-                if (previousBlock != Vector3.zero)
-                {
-                    chunk.SetBlockType(previousBlock, BlockType.Dirt);
-                }
+                if (hitBlock == null) return;
+                // if (!block.isPlaceable) return;
+
+                chunk.SetBlockType(hitBlock, BlockType.Dirt);
             }
             else
             {

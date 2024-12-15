@@ -92,9 +92,9 @@ public class ChunkMeshBuilder
                 break;
             case Direction.Bottom:
                 faceVertices[0] = new Vector3(x, y, z);
-                faceVertices[1] = new Vector3(x, y, z + 1);
+                faceVertices[1] = new Vector3(x + 1, y, z);
                 faceVertices[2] = new Vector3(x + 1, y, z + 1);
-                faceVertices[3] = new Vector3(x + 1, y, z);
+                faceVertices[3] = new Vector3(x, y, z + 1);
                 break;
         }
 
