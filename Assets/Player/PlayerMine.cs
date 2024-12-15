@@ -35,7 +35,7 @@ public class PlayerMine : MonoBehaviour
             {
                 BlockType blockType = chunk.GetBlockType(hitBlock);
                 Block block = BlockRegistry.GetBlock(blockType);
-                
+
                 Debug.Log($"Block at {hitBlock} is {blockType}");
 
                 if (hitBlock == null) return;
@@ -57,23 +57,37 @@ public class PlayerMine : MonoBehaviour
         if (Physics.Raycast(ray, out RaycastHit hit, reach))
         {
             Vector3 hitBlock = new(
-                Mathf.Floor(hit.point.x + hit.normal.x / 2),
-                Mathf.Floor(hit.point.y + hit.normal.y / 2),
-                Mathf.Floor(hit.point.z + hit.normal.z / 2)
+                Mathf.Floor(hit.point.x - hit.normal.x / 2),
+                Mathf.Floor(hit.point.y - hit.normal.y / 2),
+                Mathf.Floor(hit.point.z - hit.normal.z / 2)
             );
 
-            Chunk chunk = worldGenerator.GetChunkAtPosition(hitBlock);
-            if (chunk != null)
+            Vector3 playerPosition = new(
+                Mathf.Floor(playerCamera.transform.position.x),
+                Mathf.Floor(playerCamera.transform.position.y),
+                Mathf.Floor(playerCamera.transform.position.z)
+            );
+
+            Vector3 placeBlock = hitBlock + hit.normal;
+
+            if (
+                placeBlock == playerPosition ||
+                placeBlock == playerPosition - new Vector3(0, 1, 0)
+            ) return;
+
+            Chunk placeChunk = worldGenerator.GetChunkAtPosition(placeBlock);
+            Chunk hitChunk = worldGenerator.GetChunkAtPosition(hitBlock);
+            if (placeChunk != null && hitChunk != null)
             {
-                BlockType blockType = chunk.GetBlockType(hitBlock);
+                BlockType blockType = hitChunk.GetBlockType(hitBlock);
                 Block block = BlockRegistry.GetBlock(blockType);
 
                 Debug.Log($"Block at {hitBlock} is {blockType}");
 
                 if (hitBlock == null) return;
-                // if (!block.isPlaceable) return;
+                if (blockType == BlockType.Air) return;
 
-                chunk.SetBlockType(hitBlock, BlockType.Dirt);
+                placeChunk.SetBlockType(placeBlock, BlockType.Dirt);
             }
             else
             {
