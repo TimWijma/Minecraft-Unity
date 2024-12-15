@@ -39,7 +39,7 @@ public class WorldGenerator : MonoBehaviour
 
         Vector3 newChunkCenter = GetChunkCenterForPosition(player.position);
 
-        if (Vector3.Distance(newChunkCenter, currentChunkCenter) > 0.1f)
+        if (newChunkCenter != currentChunkCenter)
         {
             Debug.Log($"Moving to new chunk center: {newChunkCenter}");
 

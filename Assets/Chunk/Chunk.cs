@@ -3,9 +3,6 @@ using UnityEngine;
 public class Chunk : MonoBehaviour
 {
     public int chunkSize = 16;
-    public float heightScale = 10;
-    public float noiseScale = 0.02f;
-    public float densityThreshold = 0.5f;
 
     private BlockType[,,] blocks;
     private MeshFilter meshFilter;
@@ -51,12 +48,7 @@ public class Chunk : MonoBehaviour
                     float worldY = chunkCenter.y + localY;
                     float worldZ = chunkCenter.z + localZ;
 
-                    int height = Mathf.FloorToInt(
-                        Mathf.PerlinNoise(
-                            (worldX + seedX) * noiseScale,
-                            (worldZ + seedZ) * noiseScale
-                        ) * heightScale
-                    );
+                    int height = CalculateHeight(Mathf.FloorToInt(worldX), Mathf.FloorToInt(worldZ), seedX, seedZ);
 
                     int intWorldY = Mathf.FloorToInt(worldY);
 
@@ -101,6 +93,32 @@ public class Chunk : MonoBehaviour
         Mesh mesh = meshBuilder.BuildMesh();
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
+    }
+
+    private int CalculateHeight(int worldX, int worldZ, int seedX, int seedZ)
+    {
+        float height = 0;
+        float amplitude = 1;
+        float frequency = 1;
+        float maxAmplitude = 0;
+
+        float heightScale = 64f;
+        float noiseScale = 0.01f;
+        float octaves = 4;
+
+        for (int i = 0; i < octaves; i++)
+        {
+            float sampleX = (worldX + seedX) * noiseScale * frequency;
+            float sampleZ = (worldZ + seedZ) * noiseScale * frequency;
+
+            height += Mathf.PerlinNoise(sampleX, sampleZ) * amplitude;
+
+            maxAmplitude += amplitude;
+            amplitude *= 0.5f;
+            frequency *= 2;
+        }
+
+        return Mathf.FloorToInt(height / maxAmplitude * heightScale);
     }
 
     public void EnableChunk()
