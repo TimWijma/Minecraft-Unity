@@ -11,8 +11,8 @@ public class WorldGenerator : MonoBehaviour
     public Transform player;
     public GameObject chunkPrefab;
 
-    private const int WORLD_DEPTH = -8;
-    private const int WORLD_HEIGHT = 100;
+    private const int MAX_CHUNK_DEPTH = -1;
+    private const int MAX_CHUNK_HEIGHT = 5;
 
     private Vector3Int currentChunkIndex;
     private Dictionary<Vector3Int, Chunk> chunks = new();
@@ -60,9 +60,9 @@ public class WorldGenerator : MonoBehaviour
 
     Vector3Int GetChunkIndexForPosition(Vector3 position)
     {
-        int x = Mathf.FloorToInt(position.x / chunkSize);
-        int y = Mathf.FloorToInt(position.y / chunkSize);
-        int z = Mathf.FloorToInt(position.z / chunkSize);
+        int x = Mathf.RoundToInt(position.x / chunkSize);
+        int y = Mathf.RoundToInt(position.y / chunkSize);
+        int z = Mathf.RoundToInt(position.z / chunkSize);
 
         return new Vector3Int(x, y, z);
     }
@@ -80,7 +80,7 @@ public class WorldGenerator : MonoBehaviour
 
     void ClearChunks()
     {
-        float maxDistance = renderDistance + 0.5f;
+        float maxDistance = renderDistance + 1.5f;
 
         HashSet<Vector3Int> chunksToKeep = new();
         for (int z = -renderDistance; z <= renderDistance; z++)
@@ -90,7 +90,7 @@ public class WorldGenerator : MonoBehaviour
                 for (int x = -renderDistance; x <= renderDistance; x++)
                 {
                     Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
-                    if (Vector3.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
+                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
                     {
                         chunksToKeep.Add(chunkIndex);
                     }
@@ -100,16 +100,10 @@ public class WorldGenerator : MonoBehaviour
 
         foreach (var (chunkIndex, chunkObject) in chunks)
         {
-            if (chunksToKeep.Contains(chunkIndex))
+            bool shouldKeep = chunksToKeep.Contains(chunkIndex);
+            if (chunkObject != null)
             {
-                if (chunkObject != null)
-                {
-                    chunkObject.gameObject.SetActive(true);
-                }
-            }
-            else
-            {
-                chunkObject.gameObject.SetActive(false);
+                chunkObject.gameObject.SetActive(shouldKeep);
             }
         }
     }
@@ -117,7 +111,7 @@ public class WorldGenerator : MonoBehaviour
     void GenerateChunksInRadius(int radius)
     {
         Debug.Log($"Generating chunks");
-        float maxDistance = radius + 0.5f;
+        float maxDistance = radius + 1.5f;
 
         for (int z = -radius; z <= radius; z++)
         {
@@ -127,9 +121,9 @@ public class WorldGenerator : MonoBehaviour
                 {
                     Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
 
-                    if (chunkIndex.y < WORLD_DEPTH || chunkIndex.y > WORLD_HEIGHT) continue;
+                    if (chunkIndex.y < MAX_CHUNK_DEPTH || chunkIndex.y > MAX_CHUNK_HEIGHT) continue;
 
-                    if (Vector3.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
+                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
                     {
                         chunksToGenerate.Enqueue(chunkIndex);
                     }
@@ -168,7 +162,7 @@ public class WorldGenerator : MonoBehaviour
 
     Chunk GenerateChunk(Vector3Int chunkIndex)
     {
-        if (chunkIndex.y < WORLD_DEPTH || chunkIndex.y > WORLD_HEIGHT) return null;
+        if (chunkIndex.y < MAX_CHUNK_DEPTH || chunkIndex.y > MAX_CHUNK_HEIGHT) return null;
 
         if (chunks.ContainsKey(chunkIndex) && chunks[chunkIndex] != null)
         {

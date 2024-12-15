@@ -12,7 +12,7 @@ public class Chunk : MonoBehaviour
     private const int seedX = 2000;
     private const int seedZ = 4000;
 
-    private const int WORLD_DEPTH = -8;
+    private const int MAX_CHUNK_DEPTH = -1; // TODO: Get this from WorldGenerator
 
     private ChunkMeshBuilder meshBuilder;
 
@@ -48,7 +48,7 @@ public class Chunk : MonoBehaviour
 
                     int intWorldY = Mathf.FloorToInt(worldY);
 
-                    if (intWorldY == WORLD_DEPTH) // World depth is center of the chunk, so we need to offset by half the chunk size
+                    if (chunkIndex.y == MAX_CHUNK_DEPTH && y == 0)
                     {
                         blocks[x, y, z] = BlockType.Bedrock;
                     }
