@@ -33,7 +33,9 @@ public class PlayerMine : MonoBehaviour
             if (chunk != null)
             {
                 BlockType blockType = chunk.GetBlockType(hitBlock);
+                Block block = BlockRegistry.GetBlock(blockType);
                 Debug.Log($"Block type at {hitBlock} is {blockType}");
+                if (!block.isBreakable) return;
                 if (blockType == BlockType.Air) return;
                 
                 chunk.SetBlockType(hitBlock, BlockType.Air);

@@ -3,11 +3,13 @@ using UnityEngine;
 public class Block
 {
     public bool hasTexture;
+    public bool isBreakable = true;
     private Vector2[] textureCoords;
 
-    public Block(bool hasTexture)
+    public Block(bool hasTexture, bool isBreakable = true)
     {
         this.hasTexture = hasTexture;
+        this.isBreakable = isBreakable;
         textureCoords = new Vector2[6];
     }
 

@@ -10,7 +10,7 @@ public static class BlockRegistry
         blocks.Add(BlockType.Air, new Block(false));
         blocks.Add(BlockType.Dirt, new Block(true));
         blocks.Add(BlockType.Grass, new Block(true));
-        blocks.Add(BlockType.Bedrock, new Block(true));
+        blocks.Add(BlockType.Bedrock, new Block(true, false));
 
         RegisterBlocks();
     }
