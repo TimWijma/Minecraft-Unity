@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour
@@ -16,6 +15,8 @@ public class Chunk : MonoBehaviour
     private const int seedX = 2000;
     private const int seedZ = 4000;
 
+    private const int WORLD_DEPTH = -8;
+
     private ChunkMeshBuilder meshBuilder;
 
     private void Awake()
@@ -29,14 +30,6 @@ public class Chunk : MonoBehaviour
     {
         this.chunkCenter = chunkCenter;
         blocks = new BlockType[chunkSize, chunkSize, chunkSize];
-
-        // ChunkBorder border = GetComponent<ChunkBorder>();
-        // if (border == null)
-        // {
-        //     border = gameObject.AddComponent<ChunkBorder>();
-        // }
-
-        // border.CreateBorder(chunkSize);
 
         GenerateBlocks();
         GenerateMesh();
@@ -66,7 +59,12 @@ public class Chunk : MonoBehaviour
                     );
 
                     int intWorldY = Mathf.FloorToInt(worldY);
-                    if (intWorldY < height)
+
+                    if (intWorldY == WORLD_DEPTH - chunkSize / 2) // World depth is center of the chunk, so we need to offset by half the chunk size
+                    {
+                        blocks[x, y, z] = BlockType.Bedrock;
+                    }
+                    else if (intWorldY < height)
                     {
                         blocks[x, y, z] = BlockType.Dirt;
                     }

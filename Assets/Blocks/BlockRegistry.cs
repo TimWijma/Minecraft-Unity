@@ -10,6 +10,7 @@ public static class BlockRegistry
         blocks.Add(BlockType.Air, new Block(false));
         blocks.Add(BlockType.Dirt, new Block(true));
         blocks.Add(BlockType.Grass, new Block(true));
+        blocks.Add(BlockType.Bedrock, new Block(true));
 
         RegisterBlocks();
     }
@@ -23,10 +24,12 @@ public static class BlockRegistry
     {
         Block grass = blocks[BlockType.Grass];
         Block dirt = blocks[BlockType.Dirt];
+        Block bedrock = blocks[BlockType.Bedrock];
         for (int i = 0; i < 6; i++)
         {
             grass.SetTextureCoords((Direction)i, new Vector2(0, 0));
             dirt.SetTextureCoords((Direction)i, new Vector2(2, 0));
+            bedrock.SetTextureCoords((Direction)i, new Vector2(3, 0));
         }
 
         grass.SetTextureCoords(Direction.Top, new Vector2(1, 0));

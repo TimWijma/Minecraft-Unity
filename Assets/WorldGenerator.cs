@@ -54,15 +54,6 @@ public class WorldGenerator : MonoBehaviour
             GenerateChunksInRadius(renderDistance);
             Debug.Log($"Chunks generated: {chunksGenerated}");
 
-            // if (chunks.TryGetValue(currentChunkCenter, out currentChunk))
-            // {
-            //     currentChunk.GetComponent<ChunkBorder>().Highlight();
-            // }
-            // else
-            // {
-            //     Debug.LogError($"Current chunk not found at {currentChunkCenter}");
-            // }
-
             ClearChunks();
         }
     }
@@ -85,7 +76,7 @@ public class WorldGenerator : MonoBehaviour
         }
 
         return null;
-    } 
+    }
 
     void ClearChunks()
     {
@@ -108,7 +99,6 @@ public class WorldGenerator : MonoBehaviour
                 }
             }
         }
-
 
         foreach (var (chunkCenter, chunkObject) in chunks)
         {
@@ -139,6 +129,8 @@ public class WorldGenerator : MonoBehaviour
                 {
                     Vector3 offset = new(x * chunkSize, y * chunkSize, z * chunkSize);
                     Vector3 chunkCenter = currentChunkCenter + offset;
+
+                    if (chunkCenter.y < WORLD_DEPTH || chunkCenter.y > WORLD_HEIGHT) continue;
 
                     if (Vector3.Distance(chunkCenter, currentChunkCenter) <= maxDistance)
                     {
@@ -179,6 +171,8 @@ public class WorldGenerator : MonoBehaviour
 
     Chunk GenerateChunk(Vector3 chunkCenter)
     {
+        if (chunkCenter.y < WORLD_DEPTH || chunkCenter.y > WORLD_HEIGHT) return null;
+
         if (chunks.ContainsKey(chunkCenter) && chunks[chunkCenter] != null)
         {
             chunks[chunkCenter].gameObject.SetActive(true);

@@ -5,4 +5,5 @@ public enum BlockType
     Air,
     Dirt,
     Grass,
+    Bedrock
 }
