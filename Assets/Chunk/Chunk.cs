@@ -4,15 +4,18 @@ public class Chunk : MonoBehaviour
 {
     public int chunkSize = 16;
 
-    private BlockType[,,] blocks;
+    public BlockType[,,] blocks;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
-    private Vector3Int chunkIndex;
+    public Vector3Int chunkIndex;
 
     private const int seedX = 2000;
     private const int seedZ = 4000;
 
     private const int MAX_CHUNK_DEPTH = -1; // TODO: Get this from WorldGenerator
+
+    public bool blocksGenerated = false;
+    public bool structuresGenerated = false;
 
     private ChunkMeshBuilder meshBuilder;
 
@@ -23,16 +26,16 @@ public class Chunk : MonoBehaviour
         meshBuilder = new ChunkMeshBuilder(chunkSize);
     }
 
-    public void InitializeChunk(Vector3Int chunkIndex)
+    public void Initialize(Vector3Int chunkIndex, bool isNeighbor = false)
     {
         this.chunkIndex = chunkIndex;
         blocks = new BlockType[chunkSize, chunkSize, chunkSize];
 
-        GenerateBlocks();
-        GenerateMesh();
+        GenerateBlocks(isNeighbor);
+        blocksGenerated = true;
     }
 
-    private void GenerateBlocks()
+    private void GenerateBlocks(bool isNeighbor = false)
     {
         for (int z = 0; z < chunkSize; z++)
         {
@@ -44,7 +47,7 @@ public class Chunk : MonoBehaviour
                     float worldY = chunkIndex.y * chunkSize + y;
                     float worldZ = chunkIndex.z * chunkSize + z;
 
-                    int height = CalculateHeight(Mathf.FloorToInt(worldX), Mathf.FloorToInt(worldZ), seedX, seedZ);
+                    int height = TerrainHelper.CalculateHeight(Mathf.FloorToInt(worldX), Mathf.FloorToInt(worldZ), seedX, seedZ);
 
                     int intWorldY = Mathf.FloorToInt(worldY);
 
@@ -54,7 +57,7 @@ public class Chunk : MonoBehaviour
                     }
                     else if (intWorldY == height)
                     {
-                        blocks[x, y, z] = BlockType.Grass;
+                        blocks[x, y, z] = isNeighbor ? BlockType.Bedrock : BlockType.Grass;
                     }
                     else if (intWorldY < height - 3)
                     {
@@ -73,7 +76,7 @@ public class Chunk : MonoBehaviour
         }
     }
 
-    private void GenerateMesh()
+    public void GenerateMesh()
     {
         meshBuilder.UpdateBlocks(blocks);
 
@@ -93,32 +96,6 @@ public class Chunk : MonoBehaviour
         Mesh mesh = meshBuilder.BuildMesh();
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
-    }
-
-    private int CalculateHeight(int worldX, int worldZ, int seedX, int seedZ)
-    {
-        float height = 0;
-        float amplitude = 1;
-        float frequency = 1;
-        float maxAmplitude = 0;
-
-        float heightScale = 128f;
-        float noiseScale = 0.01f;
-        float octaves = 4;
-
-        for (int i = 0; i < octaves; i++)
-        {
-            float sampleX = (worldX + seedX) * noiseScale * frequency;
-            float sampleZ = (worldZ + seedZ) * noiseScale * frequency;
-
-            height += Mathf.PerlinNoise(sampleX, sampleZ) * amplitude;
-
-            maxAmplitude += amplitude;
-            amplitude *= 0.5f;
-            frequency *= 2;
-        }
-
-        return Mathf.FloorToInt(height / maxAmplitude * heightScale);
     }
 
     public void EnableChunk()
@@ -157,6 +134,6 @@ public class Chunk : MonoBehaviour
         }
 
         blocks[chunkX, chunkY, chunkZ] = blockType;
-        GenerateMesh();
+        // GenerateMesh();
     }
 }
