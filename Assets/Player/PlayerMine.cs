@@ -6,6 +6,8 @@ public class PlayerMine : MonoBehaviour
     public Camera playerCamera;
     public float reach = 5f;
 
+    public BlockType currentBlockType = BlockType.Dirt;
+
     void Update()
     {
         if (Input.GetMouseButtonDown(0))
@@ -15,6 +17,10 @@ public class PlayerMine : MonoBehaviour
         else if (Input.GetMouseButtonDown(1))
         {
             PlaceBlock();
+        }
+        else if (Input.GetMouseButtonDown(2))
+        {
+            GetBlockType();
         }
     }
 
@@ -92,6 +98,30 @@ public class PlayerMine : MonoBehaviour
             else
             {
                 Debug.Log($"Chunk not found at {hitBlock}");
+            }
+        }
+    }
+
+    void GetBlockType()
+    {
+        Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
+        if (Physics.Raycast(ray, out RaycastHit hit, reach))
+        {
+            Vector3 hitBlock = new(
+                Mathf.Floor(hit.point.x - hit.normal.x / 2),
+                Mathf.Floor(hit.point.y - hit.normal.y / 2),
+                Mathf.Floor(hit.point.z - hit.normal.z / 2)
+            );
+
+            Chunk chunk = worldGenerator.GetChunkAtPosition(hitBlock);
+            if (chunk != null)
+            {
+                BlockType blockType = chunk.GetBlockType(hitBlock);
+                if (blockType != BlockType.Air)
+                {
+                    currentBlockType = blockType;
+                    Debug.Log($"Current block type is {currentBlockType}");
+                }
             }
         }
     }
