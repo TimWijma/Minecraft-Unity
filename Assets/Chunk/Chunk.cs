@@ -9,13 +9,14 @@ public class Chunk : MonoBehaviour
     private MeshCollider meshCollider;
     public Vector3Int chunkIndex;
 
-    private const int seedX = 2000;
-    private const int seedZ = 4000;
+    public const int seedX = 2000;
+    public const int seedZ = 4000;
 
     private const int MAX_CHUNK_DEPTH = -1; // TODO: Get this from WorldGenerator
 
     public bool blocksGenerated = false;
     public bool structuresGenerated = false;
+    public bool meshGenerated = false;
 
     private ChunkMeshBuilder meshBuilder;
 
@@ -57,7 +58,8 @@ public class Chunk : MonoBehaviour
                     }
                     else if (intWorldY == height)
                     {
-                        blocks[x, y, z] = isNeighbor ? BlockType.Bedrock : BlockType.Grass;
+                        // blocks[x, y, z] = isNeighbor ? BlockType.Bedrock : BlockType.Grass;
+                        blocks[x, y, z] = BlockType.Grass;
                     }
                     else if (intWorldY < height - 3)
                     {

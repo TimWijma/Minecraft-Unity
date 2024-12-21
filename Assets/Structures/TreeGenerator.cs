@@ -11,11 +11,8 @@ public class TreeGenerator
         this.chunk = chunk;
     }
 
-    public void GenerateTrees(int seedX, int seedZ)
+    public void GenerateTrees()
     {
-        // Random.State originalRandomState = Random.state;
-        // Random.InitState(seedX * 10000 + seedZ);
-
         Vector3Int chunkIndex = chunk.chunkIndex;
         int chunkSize = chunk.chunkSize;
 
@@ -30,8 +27,8 @@ public class TreeGenerator
                 int surfaceHeight = TerrainHelper.CalculateHeight(
                     Mathf.FloorToInt(worldX),
                     Mathf.FloorToInt(worldZ),
-                    seedX,
-                    seedZ
+                    Chunk.seedX,
+                    Chunk.seedZ
                 );
 
                 // Convert to chunk-local coordinates
@@ -54,8 +51,6 @@ public class TreeGenerator
                 }
             }
         }
-
-        // Random.state = originalRandomState;
     }
 
     void CreateTree(Vector3Int position)

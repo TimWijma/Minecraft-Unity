@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,15 +19,8 @@ public class WorldGenerator : MonoBehaviour
     public Dictionary<Vector3Int, Chunk> chunks = new();
     private int chunksGenerated = 0;
 
-    private Queue<Vector3Int> chunksToGenerateBlocks = new();
-    private Queue<Vector3Int> chunksToGenerateStructures = new();
-    private Queue<Vector3Int> chunksToGenerateMeshes = new();
-
-    private HashSet<Vector3Int> waitingForNeighbors = new();
-
-    private Coroutine blockGenerationCoroutine;
-    private Coroutine structureGenerationCoroutine;
-    private Coroutine meshGenerationCoroutine;
+    private const int seedX = 0;
+    private const int seedZ = 0;
 
     void Start()
     {
@@ -34,8 +28,7 @@ public class WorldGenerator : MonoBehaviour
 
         currentChunkIndex = GetChunkIndexForPosition(player.position);
 
-        CreateChunksInRadius(renderDistance);
-        // activeGenerationCoroutine = StartCoroutine(MeshGenerationSequence());
+        StartCoroutine(CreateChunksInRadius(renderDistance));
     }
 
     void Update()
@@ -52,7 +45,8 @@ public class WorldGenerator : MonoBehaviour
 
             ClearChunks();
 
-            CreateChunksInRadius(renderDistance);
+            // CreateChunksInRadius(renderDistance);
+            StartCoroutine(CreateChunksInRadius(renderDistance));
         }
     }
 
@@ -76,6 +70,13 @@ public class WorldGenerator : MonoBehaviour
         return null;
     }
 
+    Chunk[] GetChunksInRenderDistance(int radius)
+    {
+        return chunks.Values.Where(chunk =>
+            Vector3Int.Distance(chunk.chunkIndex, currentChunkIndex) <= radius
+        ).ToArray();
+    }
+
     void ClearChunks()
     {
         float maxDistance = renderDistance + 1.5f;
@@ -96,24 +97,26 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
-        foreach (var (chunkIndex, chunkObject) in chunks)
+        var chunksToRemove = chunks.Keys.Except(chunksToKeep).ToList();
+        foreach (var chunkIndex in chunksToRemove)
         {
-            bool shouldKeep = chunksToKeep.Contains(chunkIndex);
-            if (chunkObject != null)
+            if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
             {
-                chunkObject.gameObject.SetActive(shouldKeep);
+                Destroy(chunk.gameObject);
             }
+            chunks.Remove(chunkIndex);
         }
     }
 
-    void CreateChunksInRadius(int radius)
+    IEnumerator CreateChunksInRadius(int radius)
     {
-        chunksToGenerateBlocks.Clear();
-        chunksToGenerateStructures.Clear();
-        chunksToGenerateMeshes.Clear();
+        yield return StartCoroutine(InitializeChunks(radius));
+        yield return StartCoroutine(GenerateStructures(radius));
+        yield return StartCoroutine(GenerateMeshes(radius));
+    }
 
-        float maxDistance = radius + 1.5f;
-
+    IEnumerator InitializeChunks(int radius)
+    {
         for (int z = -radius; z <= radius; z++)
         {
             for (int y = -radius; y <= radius; y++)
@@ -123,54 +126,20 @@ public class WorldGenerator : MonoBehaviour
                     Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
 
                     if (chunkIndex.y < MAX_CHUNK_DEPTH || chunkIndex.y > MAX_CHUNK_HEIGHT) continue;
-                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) > maxDistance) continue;
+                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) > radius) continue;
+                    if (chunks.ContainsKey(chunkIndex)) continue;
 
-                    chunksToGenerateBlocks.Enqueue(chunkIndex);
-                    chunksToGenerateStructures.Enqueue(chunkIndex);
+                    CreateChunk(chunkIndex);
+                    Debug.Log($"Generated chunk {chunkIndex}");
+
+                    yield return null;
                 }
             }
         }
-
-        if (blockGenerationCoroutine == null)
-        {
-            blockGenerationCoroutine = StartCoroutine(BlockGenerationSequence());
-        }
-
-        StartCoroutine(GenerationSequence());
     }
 
-    void RenderChunksInRadius(int radius)
+    void CreateChunk(Vector3Int chunkIndex, bool isNeighbor = false)
     {
-        float maxDistance = radius + 1.5f;
-
-        for (int z = -radius; z <= radius; z++)
-        {
-            for (int y = -radius; y <= radius; y++)
-            {
-                for (int x = -radius; x <= radius; x++)
-                {
-                    Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
-
-                    if (chunkIndex.y < MAX_CHUNK_DEPTH || chunkIndex.y > MAX_CHUNK_HEIGHT) continue;
-                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) > maxDistance) continue;
-
-                    if (!chunks.ContainsKey(chunkIndex) || chunks[chunkIndex] == null) continue;
-
-                    chunksToGenerateMeshes.Enqueue(chunkIndex);
-                }
-            }
-        }
-
-        if (meshGenerationCoroutine == null)
-        {
-            meshGenerationCoroutine = StartCoroutine(MeshGenerationSequence());
-        }
-    }
-
-    void GenerateBlocks(Vector3Int chunkIndex, bool isNeighbor = false)
-    {
-        if (chunks.ContainsKey(chunkIndex)) return;
-
         Vector3Int chunkPosition = chunkIndex * chunkSize;
         GameObject chunkObject = Instantiate(chunkPrefab, chunkPosition, Quaternion.identity);
         Chunk chunk = chunkObject.GetComponent<Chunk>();
@@ -179,120 +148,28 @@ public class WorldGenerator : MonoBehaviour
         chunks.Add(chunkIndex, chunk);
     }
 
-    private IEnumerator BlockGenerationSequence()
+    IEnumerator GenerateStructures(int radius)
     {
-        const float maxTimePerFrame = 1f / 60f;
-
-        // Generate blocks
-        while (chunksToGenerateBlocks.Count > 0)
+        foreach (var chunk in GetChunksInRenderDistance(radius))
         {
-            float startTime = Time.realtimeSinceStartup;
-            while (chunksToGenerateBlocks.Count > 0)
-            {
-                if (Time.realtimeSinceStartup - startTime > maxTimePerFrame)
-                {
-                    yield return null;
-                    startTime = Time.realtimeSinceStartup;
-                }
-                Vector3Int chunkIndex = chunksToGenerateBlocks.Dequeue();
-                GenerateBlocks(chunkIndex);
-            }
-            yield return null;
+            if (chunk.structuresGenerated) continue;
+
+            Vector3Int chunkIndex = chunk.chunkIndex;
+
+            Debug.Log($"Generating structures for chunk {chunkIndex}");
+
+            EnsureNeighborsExist(chunkIndex);
+
+            TreeGenerator treeGenerator = new(this, chunk);
+            treeGenerator.GenerateTrees();
+
+            chunk.structuresGenerated = true;
         }
 
-        blockGenerationCoroutine = null;
+        yield return null;
     }
 
-    private IEnumerator GenerationSequence()
-    {
-        while (chunksToGenerateBlocks.Count > 0)
-        {
-            yield return null;
-        }
-
-        structureGenerationCoroutine = StartCoroutine(StructureGenerationSequence());
-
-        while (chunksToGenerateStructures.Count > 0 || waitingForNeighbors.Count > 0)
-        {
-            yield return null;
-        }
-
-        RenderChunksInRadius(renderDistance);
-    }
-
-    private IEnumerator StructureGenerationSequence()
-    {
-        const float maxTimePerFrame = 1f / 60f;
-
-        // Generate structures
-        while (chunksToGenerateStructures.Count > 0)
-        {
-            float startTime = Time.realtimeSinceStartup;
-
-            if (waitingForNeighbors.Count > 0)
-            {
-                var waitingChunks = waitingForNeighbors.ToArray();
-                foreach (Vector3Int chunkIndex in waitingChunks)
-                {
-                    if (EnsureNeighborsExist(chunkIndex))
-                    {
-                        waitingForNeighbors.Remove(chunkIndex);
-                        GenerateStructures(chunkIndex);
-                    }
-                }
-            }
-
-            while (chunksToGenerateStructures.Count > 0)
-            {
-                if (Time.realtimeSinceStartup - startTime > maxTimePerFrame)
-                {
-                    yield return null;
-                    startTime = Time.realtimeSinceStartup;
-                }
-                Vector3Int chunkIndex = chunksToGenerateStructures.Dequeue();
-
-                if (EnsureNeighborsExist(chunkIndex))
-                {
-                    GenerateStructures(chunkIndex);
-                }
-            }
-            yield return null;
-        }
-
-        structureGenerationCoroutine = null;
-    }
-
-    void GenerateMesh(Vector3Int chunkIndex)
-    {
-        Chunk chunk = chunks[chunkIndex];
-        chunk.GenerateMesh();
-    }
-
-    private IEnumerator MeshGenerationSequence()
-    {
-        const float maxTimePerFrame = 1f / 60f;
-
-        // Generate meshes
-        while (chunksToGenerateMeshes.Count > 0)
-        {
-            float startTime = Time.realtimeSinceStartup;
-            while (chunksToGenerateMeshes.Count > 0)
-            {
-                if (Time.realtimeSinceStartup - startTime > maxTimePerFrame)
-                {
-                    yield return null;
-                    startTime = Time.realtimeSinceStartup;
-                }
-                Vector3Int chunkIndex = chunksToGenerateMeshes.Dequeue();
-                GenerateMesh(chunkIndex);
-            }
-            yield return null;
-        }
-
-        meshGenerationCoroutine = null;
-    }
-
-    private bool EnsureNeighborsExist(Vector3Int chunkIndex)
+    private void EnsureNeighborsExist(Vector3Int chunkIndex)
     {
         Vector3Int[] neighbourChunks = new Vector3Int[]
         {
@@ -304,46 +181,38 @@ public class WorldGenerator : MonoBehaviour
             chunkIndex + Direction.Bottom.ToVector3Int()
         };
 
-        bool allNeighborsExist = true;
         foreach (Vector3Int neighbourChunkIndex in neighbourChunks)
         {
             // Skip if out of world bounds
             if (neighbourChunkIndex.y < MAX_CHUNK_DEPTH || neighbourChunkIndex.y > MAX_CHUNK_HEIGHT) continue;
 
             // Ensure the neighbor chunk exists
-            if (!chunks.ContainsKey(neighbourChunkIndex) ||
-                chunks[neighbourChunkIndex] == null ||
-                !chunks[neighbourChunkIndex].blocksGenerated)
+            if (!chunks.ContainsKey(neighbourChunkIndex))
             {
-                if (!chunks.ContainsKey(neighbourChunkIndex))
-                {
-                    chunksToGenerateBlocks.Enqueue(neighbourChunkIndex);
-                }
+                CreateChunk(neighbourChunkIndex, isNeighbor: true);
 
-                waitingForNeighbors.Add(chunkIndex);
-                allNeighborsExist = false;
+                Debug.Log($"Generated neighbor chunk {neighbourChunkIndex}");
             }
         }
-
-        return allNeighborsExist;
     }
 
-    private void GenerateStructures(Vector3Int chunkIndex)
+    IEnumerator GenerateMeshes(int radius)
     {
-        if (!chunks.TryGetValue(chunkIndex, out Chunk chunk)) return;
+        foreach (var chunk in GetChunksInRenderDistance(radius))
+        {
+            if (chunk == null || chunk.gameObject == null) continue; // Skip destroyed chunks
+            if (chunk.meshGenerated) continue;
 
-        if (chunk.structuresGenerated) return;
+            chunk.GenerateMesh();
 
-        if (!chunk.blocksGenerated) return;
+            Debug.Log($"Generated mesh for chunk {chunk.chunkIndex}");
 
-        int seedX = chunkIndex.x * chunkSize;
-        int seedZ = chunkIndex.z * chunkSize;
+            chunk.meshGenerated = true;
 
-        TreeGenerator treeGenerator = new(this, chunk);
-        treeGenerator.GenerateTrees(seedX, seedZ);
-
-        chunk.structuresGenerated = true;
+            yield return null;
+        }
     }
+
 
     public void PlaceBlockGlobal(Vector3 worldPosition, BlockType blockType)
     {
