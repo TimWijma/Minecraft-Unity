@@ -124,7 +124,7 @@ public class Chunk : MonoBehaviour
         return blocks[chunkX, chunkY, chunkZ];
     }
 
-    public void SetBlockType(Vector3 worldPosition, BlockType blockType)
+    public void SetBlockType(Vector3 worldPosition, BlockType blockType, bool updateMesh = true)
     {
         int chunkX = Mathf.FloorToInt(worldPosition.x - (chunkIndex.x * chunkSize));
         int chunkY = Mathf.FloorToInt(worldPosition.y - (chunkIndex.y * chunkSize));
@@ -136,6 +136,9 @@ public class Chunk : MonoBehaviour
         }
 
         blocks[chunkX, chunkY, chunkZ] = blockType;
-        // GenerateMesh();
+        if (updateMesh)
+        {
+            GenerateMesh();
+        }
     }
 }

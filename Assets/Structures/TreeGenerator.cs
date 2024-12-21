@@ -40,7 +40,7 @@ public class TreeGenerator
                 {
                     int localY = surfaceHeight % chunkSize;
 
-                    if (Random.Range(0, 100) < 5 && chunk.blocks[x, localY, z] == BlockType.Grass)
+                    if (Random.Range(0, 100) < 1 && chunk.blocks[x, localY, z] == BlockType.Grass)
                     {
                         CreateTree(new Vector3Int(
                             Mathf.FloorToInt(worldX),
@@ -55,30 +55,40 @@ public class TreeGenerator
 
     void CreateTree(Vector3Int position)
     {
-        for (int z = 0; z < 2; z++)
+        for (int y = 3; y < 6; y++)
         {
-            for (int y = 0; y < 2; y++)
+            for (int x = -2; x <= 2; x++)
             {
-                for (int x = 0; x < 2; x++)
+                for (int z = -2; z <= 2; z++)
                 {
-                    Vector3Int blockPosition = position + new Vector3Int(x, y, z);
-                    // Vector3Int targetChunkIndex = worldGenerator.GetChunkIndexForPosition(blockPosition);
+                    var blockPosition = position + new Vector3Int(x, y, z);
+                    var blockChunkIndex = worldGenerator.GetChunkIndexForPosition(blockPosition);
 
-                    worldGenerator.PlaceBlockGlobal(position + new Vector3Int(x, y, z), BlockType.Stone);
+                    if (blockChunkIndex != chunk.chunkIndex && !worldGenerator.chunks.ContainsKey(blockChunkIndex))
+                    {
+                        worldGenerator.CreateChunk(blockChunkIndex, true);
+                    }
 
-                    // if (targetChunkIndex != chunk.chunkIndex)
-                    // {
-                    //     if (!worldGenerator.chunks.ContainsKey(targetChunkIndex))
-                    //     {
-                    //         worldGenerator.
-                    //     }
-                    // }
-                    // else
-                    // {
-                    //     chunk.PlaceBlock(blockPosition, BlockType.Wood);
-                    // }
+                    worldGenerator.PlaceBlockGlobal(blockPosition, BlockType.Leaves, chunk.chunkIndex);
+                    worldGenerator.chunks[blockChunkIndex].meshGenerated = false;
                 }
             }
+        }
+        
+
+        // Trunk
+        for (int y = 0; y < 5; y++)
+        {
+            var blockPosition = position + new Vector3Int(0, y, 0);
+            var blockChunkIndex = worldGenerator.GetChunkIndexForPosition(blockPosition);
+
+            if (blockChunkIndex != chunk.chunkIndex && !worldGenerator.chunks.ContainsKey(blockChunkIndex))
+            {
+                worldGenerator.CreateChunk(blockChunkIndex, true);
+            }
+
+            worldGenerator.PlaceBlockGlobal(blockPosition, BlockType.Wood, chunk.chunkIndex);
+            worldGenerator.chunks[blockChunkIndex].meshGenerated = false;
         }
     }
 }

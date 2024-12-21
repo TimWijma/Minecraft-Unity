@@ -4,5 +4,7 @@ public enum BlockType
     Dirt,
     Grass,
     Stone,
-    Bedrock
+    Bedrock,
+    Wood,
+    Leaves
 }

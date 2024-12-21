@@ -45,7 +45,6 @@ public class WorldGenerator : MonoBehaviour
 
             ClearChunks();
 
-            // CreateChunksInRadius(renderDistance);
             StartCoroutine(CreateChunksInRadius(renderDistance));
         }
     }
@@ -138,7 +137,7 @@ public class WorldGenerator : MonoBehaviour
         }
     }
 
-    void CreateChunk(Vector3Int chunkIndex, bool isNeighbor = false)
+    public void CreateChunk(Vector3Int chunkIndex, bool isNeighbor = false)
     {
         Vector3Int chunkPosition = chunkIndex * chunkSize;
         GameObject chunkObject = Instantiate(chunkPrefab, chunkPosition, Quaternion.identity);
@@ -158,41 +157,12 @@ public class WorldGenerator : MonoBehaviour
 
             Debug.Log($"Generating structures for chunk {chunkIndex}");
 
-            EnsureNeighborsExist(chunkIndex);
-
             TreeGenerator treeGenerator = new(this, chunk);
             treeGenerator.GenerateTrees();
 
             chunk.structuresGenerated = true;
-        }
 
-        yield return null;
-    }
-
-    private void EnsureNeighborsExist(Vector3Int chunkIndex)
-    {
-        Vector3Int[] neighbourChunks = new Vector3Int[]
-        {
-            chunkIndex + Direction.Left.ToVector3Int(),
-            chunkIndex + Direction.Right.ToVector3Int(),
-            chunkIndex + Direction.Front.ToVector3Int(),
-            chunkIndex + Direction.Back.ToVector3Int(),
-            chunkIndex + Direction.Top.ToVector3Int(),
-            chunkIndex + Direction.Bottom.ToVector3Int()
-        };
-
-        foreach (Vector3Int neighbourChunkIndex in neighbourChunks)
-        {
-            // Skip if out of world bounds
-            if (neighbourChunkIndex.y < MAX_CHUNK_DEPTH || neighbourChunkIndex.y > MAX_CHUNK_HEIGHT) continue;
-
-            // Ensure the neighbor chunk exists
-            if (!chunks.ContainsKey(neighbourChunkIndex))
-            {
-                CreateChunk(neighbourChunkIndex, isNeighbor: true);
-
-                Debug.Log($"Generated neighbor chunk {neighbourChunkIndex}");
-            }
+            yield return null;
         }
     }
 
@@ -201,6 +171,7 @@ public class WorldGenerator : MonoBehaviour
         foreach (var chunk in GetChunksInRenderDistance(radius))
         {
             if (chunk == null || chunk.gameObject == null) continue; // Skip destroyed chunks
+            if (!chunk.blocksGenerated || !chunk.structuresGenerated) continue;
             if (chunk.meshGenerated) continue;
 
             chunk.GenerateMesh();
@@ -213,14 +184,17 @@ public class WorldGenerator : MonoBehaviour
         }
     }
 
-
-    public void PlaceBlockGlobal(Vector3 worldPosition, BlockType blockType)
+    public void PlaceBlockGlobal(Vector3 worldPosition, BlockType blockType, Vector3Int originalChunk)
     {
         Vector3Int chunkIndex = GetChunkIndexForPosition(worldPosition);
 
         if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
         {
-            chunk.SetBlockType(worldPosition, blockType);
+            chunk.SetBlockType(worldPosition, blockType, false);
+        }
+        else
+        {
+            Debug.LogWarning($"Chunk not found at {chunkIndex}. PlaceBlock called from chunk {originalChunk}");
         }
     }
 }
