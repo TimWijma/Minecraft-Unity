@@ -4,7 +4,7 @@ public class Chunk : MonoBehaviour
 {
     public int chunkSize = 16;
 
-    public BlockType[,,] blocks;
+    public string[,,] blocks;
     private MeshFilter meshFilter;
     private MeshCollider meshCollider;
     public Vector3Int chunkIndex;
@@ -30,7 +30,7 @@ public class Chunk : MonoBehaviour
     public void Initialize(Vector3Int chunkIndex, bool isNeighbor = false)
     {
         this.chunkIndex = chunkIndex;
-        blocks = new BlockType[chunkSize, chunkSize, chunkSize];
+        blocks = new string[chunkSize, chunkSize, chunkSize];
 
         GenerateBlocks(isNeighbor);
         blocksGenerated = true;
@@ -54,24 +54,23 @@ public class Chunk : MonoBehaviour
 
                     if (chunkIndex.y == MAX_CHUNK_DEPTH && y == 0)
                     {
-                        blocks[x, y, z] = BlockType.Bedrock;
+                        blocks[x, y, z] = "bedrock";
                     }
                     else if (intWorldY == height)
                     {
-                        // blocks[x, y, z] = isNeighbor ? BlockType.Bedrock : BlockType.Grass;
-                        blocks[x, y, z] = BlockType.Grass;
+                        blocks[x, y, z] = "grass";
                     }
                     else if (intWorldY < height - 3)
                     {
-                        blocks[x, y, z] = BlockType.Stone;
+                        blocks[x, y, z] = "stone";
                     }
                     else if (intWorldY < height)
                     {
-                        blocks[x, y, z] = BlockType.Dirt;
+                        blocks[x, y, z] = "dirt";
                     }
                     else
                     {
-                        blocks[x, y, z] = BlockType.Air;
+                        blocks[x, y, z] = "air";
                     }
                 }
             }
@@ -88,7 +87,7 @@ public class Chunk : MonoBehaviour
             {
                 for (int x = 0; x < chunkSize; x++)
                 {
-                    if (blocks[x, y, z] == BlockType.Air) continue;
+                    if (blocks[x, y, z] == "air") continue;
 
                     meshBuilder.AddCube(x, y, z);
                 }
@@ -110,7 +109,7 @@ public class Chunk : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    public BlockType GetBlockType(Vector3 worldPosition)
+    public string GetBlockAtWorldPosition(Vector3 worldPosition)
     {
         int chunkX = Mathf.FloorToInt(worldPosition.x - (chunkIndex.x * chunkSize));
         int chunkY = Mathf.FloorToInt(worldPosition.y - (chunkIndex.y * chunkSize));
@@ -118,13 +117,13 @@ public class Chunk : MonoBehaviour
 
         if (chunkX < 0 || chunkX >= chunkSize || chunkY < 0 || chunkY >= chunkSize || chunkZ < 0 || chunkZ >= chunkSize)
         {
-            return BlockType.Air;
+            return "air";
         }
 
         return blocks[chunkX, chunkY, chunkZ];
     }
 
-    public void SetBlockType(Vector3 worldPosition, BlockType blockType, bool updateMesh = true)
+    public void SetBlock(Vector3 worldPosition, string blockId, bool updateMesh = true)
     {
         int chunkX = Mathf.FloorToInt(worldPosition.x - (chunkIndex.x * chunkSize));
         int chunkY = Mathf.FloorToInt(worldPosition.y - (chunkIndex.y * chunkSize));
@@ -135,7 +134,7 @@ public class Chunk : MonoBehaviour
             return;
         }
 
-        blocks[chunkX, chunkY, chunkZ] = blockType;
+        blocks[chunkX, chunkY, chunkZ] = blockId;
         if (updateMesh)
         {
             GenerateMesh();

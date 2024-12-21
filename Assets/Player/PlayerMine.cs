@@ -6,7 +6,7 @@ public class PlayerMine : MonoBehaviour
     public Camera playerCamera;
     public float reach = 5f;
 
-    public BlockType currentBlockType = BlockType.Dirt;
+    public string currentBlockId = "dirt";
 
     void Update()
     {
@@ -20,7 +20,7 @@ public class PlayerMine : MonoBehaviour
         }
         else if (Input.GetMouseButtonDown(2))
         {
-            GetBlockType();
+            PickBlock();
         }
     }
 
@@ -39,16 +39,16 @@ public class PlayerMine : MonoBehaviour
             Chunk chunk = worldGenerator.GetChunkAtPosition(hitBlock);
             if (chunk != null)
             {
-                BlockType blockType = chunk.GetBlockType(hitBlock);
-                Block block = BlockRegistry.GetBlock(blockType);
+                string blockId = chunk.GetBlockAtWorldPosition(hitBlock);
+                Block block = BlockRegistry.Instance.GetBlock(blockId);
 
-                Debug.Log($"Block at {hitBlock} is {blockType}");
+                Debug.Log($"Block at {hitBlock} is {blockId}");
 
                 if (hitBlock == null) return;
                 if (!block.isBreakable) return;
-                if (blockType == BlockType.Air) return;
+                if (blockId == "air") return;
 
-                chunk.SetBlockType(hitBlock, BlockType.Air);
+                chunk.SetBlock(hitBlock, "air");
             }
             else
             {
@@ -85,15 +85,15 @@ public class PlayerMine : MonoBehaviour
             Chunk hitChunk = worldGenerator.GetChunkAtPosition(hitBlock);
             if (placeChunk != null && hitChunk != null)
             {
-                BlockType blockType = hitChunk.GetBlockType(hitBlock);
-                Block block = BlockRegistry.GetBlock(blockType);
+                string blockId = hitChunk.GetBlockAtWorldPosition(hitBlock);
+                Block block = BlockRegistry.Instance.GetBlock(blockId);
 
-                Debug.Log($"Block at {hitBlock} is {blockType}");
+                Debug.Log($"Block at {hitBlock} is {blockId}");
 
                 if (hitBlock == null) return;
-                if (blockType == BlockType.Air) return;
+                if (blockId == "air") return;
 
-                placeChunk.SetBlockType(placeBlock, BlockType.Dirt);
+                placeChunk.SetBlock(placeBlock, currentBlockId);
             }
             else
             {
@@ -102,7 +102,7 @@ public class PlayerMine : MonoBehaviour
         }
     }
 
-    void GetBlockType()
+    void PickBlock()
     {
         Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, reach))
@@ -116,11 +116,11 @@ public class PlayerMine : MonoBehaviour
             Chunk chunk = worldGenerator.GetChunkAtPosition(hitBlock);
             if (chunk != null)
             {
-                BlockType blockType = chunk.GetBlockType(hitBlock);
-                if (blockType != BlockType.Air)
+                string blockId = chunk.GetBlockAtWorldPosition(hitBlock);
+                if (blockId != "air")
                 {
-                    currentBlockType = blockType;
-                    Debug.Log($"Current block type is {currentBlockType}");
+                    currentBlockId = blockId;
+                    Debug.Log($"Current block type is {currentBlockId}");
                 }
             }
         }

@@ -184,13 +184,13 @@ public class WorldGenerator : MonoBehaviour
         }
     }
 
-    public void PlaceBlockGlobal(Vector3 worldPosition, BlockType blockType, Vector3Int originalChunk)
+    public void PlaceBlockGlobal(Vector3 worldPosition, string blockId, Vector3Int originalChunk)
     {
         Vector3Int chunkIndex = GetChunkIndexForPosition(worldPosition);
 
         if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
         {
-            chunk.SetBlockType(worldPosition, blockType, false);
+            chunk.SetBlock(worldPosition, blockId, false);
         }
         else
         {

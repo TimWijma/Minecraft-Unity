@@ -40,7 +40,7 @@ public class TreeGenerator
                 {
                     int localY = surfaceHeight % chunkSize;
 
-                    if (Random.Range(0, 100) < 1 && chunk.blocks[x, localY, z] == BlockType.Grass)
+                    if (Random.Range(0, 100) < 1 && chunk.blocks[x, localY, z] == "grass")
                     {
                         CreateTree(new Vector3Int(
                             Mathf.FloorToInt(worldX),
@@ -69,7 +69,7 @@ public class TreeGenerator
                         worldGenerator.CreateChunk(blockChunkIndex, true);
                     }
 
-                    worldGenerator.PlaceBlockGlobal(blockPosition, BlockType.Leaves, chunk.chunkIndex);
+                    worldGenerator.PlaceBlockGlobal(blockPosition, "leaves", chunk.chunkIndex);
                     worldGenerator.chunks[blockChunkIndex].meshGenerated = false;
                 }
             }
@@ -87,7 +87,7 @@ public class TreeGenerator
                 worldGenerator.CreateChunk(blockChunkIndex, true);
             }
 
-            worldGenerator.PlaceBlockGlobal(blockPosition, BlockType.Wood, chunk.chunkIndex);
+            worldGenerator.PlaceBlockGlobal(blockPosition, "wood", chunk.chunkIndex);
             worldGenerator.chunks[blockChunkIndex].meshGenerated = false;
         }
     }

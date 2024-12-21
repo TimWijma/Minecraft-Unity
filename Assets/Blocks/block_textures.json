@@ -1,0 +1,10 @@
+{
+    "grass_side": { "x": 0, "y": 0 },
+    "grass_top": { "x": 1, "y": 0 },
+    "dirt": { "x": 2, "y": 0 },
+    "stone": { "x": 3, "y": 0 },
+    "bedrock": { "x": 4, "y": 0 },
+    "wood_side": { "x": 5, "y": 0 },
+    "wood_top": { "x": 6, "y": 0 },
+    "leaves": { "x": 7, "y": 0 }
+}

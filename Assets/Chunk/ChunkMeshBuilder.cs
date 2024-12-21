@@ -15,7 +15,7 @@ public class ChunkMeshBuilder
     private int currentVertIndex = 0;
     private int currentTriIndex = 0;
 
-    private BlockType[,,] blocks;
+    private string[,,] blocks;
 
     public ChunkMeshBuilder(int chunkSize)
     {
@@ -30,7 +30,7 @@ public class ChunkMeshBuilder
         normals = new Vector3[maxVertices];
     }
 
-    public void UpdateBlocks(BlockType[,,] blocks)
+    public void UpdateBlocks(string[,,] blocks)
     {
         this.blocks = blocks;
         currentTriIndex = 0;
@@ -51,7 +51,7 @@ public class ChunkMeshBuilder
             return true;
         }
 
-        return blocks[x, y, z] == BlockType.Air;
+        return blocks[x, y, z] == "air";
     }
 
     private Vector3[] GetFaceVertices(Direction direction, int x, int y, int z)
@@ -109,7 +109,7 @@ public class ChunkMeshBuilder
         {
             int tilesPerAxis = 16;
             float tileSize = 1f / tilesPerAxis;
-            Vector2 tileCoords = block.GetTextureCoords(direction);
+            Vector2 tileCoords = BlockRegistry.Instance.GetBlockTexture(block.id, direction);
 
             float x = tileCoords.x * tileSize;
             float y = (tilesPerAxis - tileCoords.y - 1) * tileSize;
@@ -133,7 +133,7 @@ public class ChunkMeshBuilder
     public void AddFace(Direction direction, int x, int y, int z)
     {
 
-        Block block = BlockRegistry.GetBlock(blocks[x, y, z]);
+        Block block = BlockRegistry.Instance.GetBlock(blocks[x, y, z]);
 
         Vector3[] faceVertices = GetFaceVertices(direction, x, y, z);
         Vector2[] faceUVs = GetFaceUVs(block, direction);

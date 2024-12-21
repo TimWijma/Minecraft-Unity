@@ -1,0 +1,67 @@
+[
+    {
+        "id": "air",
+        "hasTexture": false,
+        "isBreakable": false
+    },
+    {
+        "id": "dirt",
+        "hasTexture": true,
+        "isBreakable": true,
+        "texture": {
+            "top": "dirt",
+            "bottom": "dirt",
+            "side": "dirt"
+        }
+    },
+    {
+        "id": "grass",
+        "hasTexture": true,
+        "isBreakable": true,
+        "texture": {
+            "top": "grass_top",
+            "bottom": "dirt",
+            "side": "grass_side"
+        }
+    },
+    {
+        "id": "stone",
+        "hasTexture": true,
+        "isBreakable": true,
+        "texture": {
+            "top": "stone",
+            "bottom": "stone",
+            "side": "stone"
+        }
+    },
+    {
+        "id": "wood",
+        "hasTexture": true,
+        "isBreakable": true,
+        "texture": {
+            "top": "wood_top",
+            "bottom": "wood_top",
+            "side": "wood_side"
+        }
+    },
+    {
+        "id": "leaves",
+        "hasTexture": true,
+        "isBreakable": true,
+        "texture": {
+            "top": "leaves",
+            "bottom": "leaves",
+            "side": "leaves"
+        }
+    },
+    {
+        "id": "bedrock",
+        "hasTexture": true,
+        "isBreakable": false,
+        "texture": {
+            "top": "bedrock",
+            "bottom": "bedrock",
+            "side": "bedrock"
+        }
+    }
+]

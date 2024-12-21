@@ -1,49 +1,78 @@
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
+using Newtonsoft.Json;
 
-public static class BlockRegistry
+public class BlockRegistry : MonoBehaviour
 {
-    private static readonly Dictionary<BlockType, Block> blocks = new();
+    public static BlockRegistry Instance;
 
-    static BlockRegistry()
+    public Dictionary<string, Block> blocks = new();
+    private Dictionary<string, Vector2Int> blockTextures = new();
+
+    void Awake()
     {
-        blocks.Add(BlockType.Air, new Block(false));
-        blocks.Add(BlockType.Dirt, new Block(true));
-        blocks.Add(BlockType.Grass, new Block(true));
-        blocks.Add(BlockType.Stone, new Block(true));
-        blocks.Add(BlockType.Bedrock, new Block(true, false));
-        blocks.Add(BlockType.Wood, new Block(true));
-        blocks.Add(BlockType.Leaves, new Block(true));
-
-        RegisterBlocks();
-    }
-
-    public static Block GetBlock(BlockType blockType)
-    {
-        return blocks[blockType];
-    }
-
-    public static void RegisterBlocks()
-    {
-        Block grass = blocks[BlockType.Grass];
-        Block dirt = blocks[BlockType.Dirt];
-        Block stone = blocks[BlockType.Stone];
-        Block bedrock = blocks[BlockType.Bedrock];
-        Block wood = blocks[BlockType.Wood];
-        Block leaves = blocks[BlockType.Leaves];
-        for (int i = 0; i < 6; i++)
+        if (Instance == null)
         {
-            grass.SetTextureCoords((Direction)i, new Vector2(0, 0));
-            dirt.SetTextureCoords((Direction)i, new Vector2(2, 0));
-            stone.SetTextureCoords((Direction)i, new Vector2(3, 0));
-            bedrock.SetTextureCoords((Direction)i, new Vector2(4, 0));
-            wood.SetTextureCoords((Direction)i, new Vector2(5, 0));
-            leaves.SetTextureCoords((Direction)i, new Vector2(7, 0));
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+            Debug.Log("BlockRegistry initialized");
+            InitializeBlockTextures();
+            InitializeBlocks();
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    public void InitializeBlockTextures()
+    {
+        string json = File.ReadAllText("Assets/Blocks/block_textures.json");
+        blockTextures = JsonConvert.DeserializeObject<Dictionary<string, Vector2Int>>(json);
+
+        foreach (var blockTexture in blockTextures)
+        {
+            Debug.Log($"Loaded block texture: {blockTexture.Key} {blockTexture.Value}");
+        }
+    }
+
+    public void InitializeBlocks()
+    {
+        string json = File.ReadAllText("Assets/Blocks/blocks.json");
+        Block[] blocksArray = JsonConvert.DeserializeObject<Block[]>(json);
+        foreach (var block in blocksArray)
+        {
+            blocks[block.id] = block;
+            Debug.Log($"Loaded block: {block.id}");
+        }
+    }
+
+    public Vector2Int GetBlockTexture(string blockId, Direction direction)
+    {
+        Block block = GetBlock(blockId);
+
+        Vector2Int texture = direction switch
+        {
+            Direction.Top => blockTextures[block.texture.top],
+            Direction.Bottom => blockTextures[block.texture.bottom],
+            Direction.Left => blockTextures[block.texture.side],
+            Direction.Right => blockTextures[block.texture.side],
+            Direction.Front => blockTextures[block.texture.side],
+            Direction.Back => blockTextures[block.texture.side],
+            _ => new Vector2Int(0, 0),
+        };
+
+        if (texture == null)
+        {
+            Debug.LogError($"Texture not found for block {blockId} and direction {direction}");
         }
 
-        grass.SetTextureCoords(Direction.Top, new Vector2(1, 0));
-        grass.SetTextureCoords(Direction.Bottom, new Vector2(2, 0));
+        return texture;
+    }
 
-        wood.SetTextureCoords(Direction.Top, new Vector2(6, 0));
+    public Block GetBlock(string blockId)
+    {
+        return blocks[blockId];
     }
 }
