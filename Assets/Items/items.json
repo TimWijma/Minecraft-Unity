@@ -1,0 +1,32 @@
+[
+    {
+        "id": "dirt",
+        "maxStackSize": 64,
+        "isPlaceable": true,
+        "placeableBlock": "dirt"
+    },
+    {
+        "id": "stone",
+        "maxStackSize": 64,
+        "isPlaceable": true,
+        "placeableBlock": "stone"
+    },
+    {
+        "id": "wood",
+        "maxStackSize": 64,
+        "isPlaceable": true,
+        "placeableBlock": "wood"
+    },
+    {
+        "id": "leaves",
+        "maxStackSize": 64,
+        "isPlaceable": true,
+        "placeableBlock": "leaves"
+    },
+    {
+        "id": "dirt",
+        "maxStackSize": 64,
+        "isPlaceable": true,
+        "placeableBlock": "dirt"
+    }
+]

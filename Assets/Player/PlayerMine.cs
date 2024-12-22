@@ -6,25 +6,16 @@ public class PlayerMine : MonoBehaviour
     public Camera playerCamera;
     public float reach = 5f;
 
+    private PlayerInventory inventory;
+
     public string currentBlockId = "dirt";
 
-    void Update()
+    void Awake()
     {
-        if (Input.GetMouseButtonDown(0))
-        {
-            MineBlock();
-        }
-        else if (Input.GetMouseButtonDown(1))
-        {
-            PlaceBlock();
-        }
-        else if (Input.GetMouseButtonDown(2))
-        {
-            PickBlock();
-        }
+        inventory = GetComponent<PlayerInventory>();
     }
 
-    void MineBlock()
+    public void MineBlock()
     {
         Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
 
@@ -49,6 +40,11 @@ public class PlayerMine : MonoBehaviour
                 if (blockId == "air") return;
 
                 chunk.SetBlock(hitBlock, "air");
+
+                if (block.dropItem != null)
+                {
+                    inventory.AddItem(block.dropItem);
+                }
             }
             else
             {
@@ -57,8 +53,10 @@ public class PlayerMine : MonoBehaviour
         }
     }
 
-    void PlaceBlock()
+    public void PlaceBlock()
     {
+        if (inventory.items[inventory.currentIndex] == null || !inventory.items[inventory.currentIndex].item.isPlaceable) return;
+
         Ray ray = new(playerCamera.transform.position, playerCamera.transform.forward);
         if (Physics.Raycast(ray, out RaycastHit hit, reach))
         {
@@ -85,15 +83,19 @@ public class PlayerMine : MonoBehaviour
             Chunk hitChunk = worldGenerator.GetChunkAtPosition(hitBlock);
             if (placeChunk != null && hitChunk != null)
             {
-                string blockId = hitChunk.GetBlockAtWorldPosition(hitBlock);
-                Block block = BlockRegistry.Instance.GetBlock(blockId);
+                string hitBlockId = hitChunk.GetBlockAtWorldPosition(hitBlock);
+                Block block = BlockRegistry.Instance.GetBlock(hitBlockId);
 
-                Debug.Log($"Block at {hitBlock} is {blockId}");
+                Debug.Log($"Block at {hitBlock} is {hitBlockId}");
 
                 if (hitBlock == null) return;
-                if (blockId == "air") return;
+                if (hitBlockId == "air") return;
 
-                placeChunk.SetBlock(placeBlock, currentBlockId);
+                string placeBlockId = inventory.PlaceItem();
+                if (placeBlockId != null)
+                {
+                    placeChunk.SetBlock(placeBlock, placeBlockId);
+                }
             }
             else
             {

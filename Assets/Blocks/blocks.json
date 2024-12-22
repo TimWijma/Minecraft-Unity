@@ -8,6 +8,7 @@
         "id": "dirt",
         "hasTexture": true,
         "isBreakable": true,
+        "dropItem": "dirt",
         "texture": {
             "top": "dirt",
             "bottom": "dirt",
@@ -18,6 +19,7 @@
         "id": "grass",
         "hasTexture": true,
         "isBreakable": true,
+        "dropItem": "dirt",
         "texture": {
             "top": "grass_top",
             "bottom": "dirt",
@@ -28,6 +30,7 @@
         "id": "stone",
         "hasTexture": true,
         "isBreakable": true,
+        "dropItem": "stone",
         "texture": {
             "top": "stone",
             "bottom": "stone",
@@ -38,6 +41,7 @@
         "id": "wood",
         "hasTexture": true,
         "isBreakable": true,
+        "dropItem": "wood",
         "texture": {
             "top": "wood_top",
             "bottom": "wood_top",
@@ -48,6 +52,7 @@
         "id": "leaves",
         "hasTexture": true,
         "isBreakable": true,
+        "dropItem": "leaves",
         "texture": {
             "top": "leaves",
             "bottom": "leaves",
