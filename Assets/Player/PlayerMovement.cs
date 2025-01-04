@@ -18,9 +18,15 @@ public class PlayerMovement : MonoBehaviour
     private bool isSprinting;
     private bool isAgainstWall;
 
-
+    private PlayerInventory inventory;
 
     public TextMeshProUGUI coordsText;
+    public TextMeshProUGUI inventoryText;
+
+    void Awake()
+    {
+        inventory = GetComponent<PlayerInventory>();
+    }
 
     void Update()
     {
@@ -36,6 +42,18 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 pos = transform.position;
         coordsText.text = $"X: {pos.x:F2}\nY: {pos.y:F2}\nZ: {pos.z:F2}";
+
+        inventoryText.text = "Inventory:\n";
+        for (int i = 0; i < inventory.items.Count; i++)
+        {
+            var item = inventory.items[i];
+            if (item == null) continue;
+            if (inventory.currentIndex == i)
+            {
+                inventoryText.text += "> ";
+            }
+            inventoryText.text += $"{item.item.id} x{item.count}\n";
+        }
     }
 
     void FixedUpdate()

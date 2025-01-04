@@ -9,7 +9,7 @@ public class PlayerFollow : MonoBehaviour
 
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked;
+        Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
     }
 

@@ -81,7 +81,7 @@ public class PlayerInventory : MonoBehaviour
 
         currentItem.count--;
 
-        if (currentItem.count == 0) currentItem = null;
+        if (currentItem.count == 0) items[currentIndex] = null;
 
         return currentItem.item.id;
     }
