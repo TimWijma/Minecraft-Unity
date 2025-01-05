@@ -12,21 +12,16 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector3 moveDirection;
     private Vector3 wallNormal;
+    private float verticalMovement;
 
     private bool isGrounded;
     private bool jumpRequest;
     private bool isSprinting;
     private bool isAgainstWall;
 
-    private PlayerInventory inventory;
-
     public TextMeshProUGUI coordsText;
-    public TextMeshProUGUI inventoryText;
 
-    void Awake()
-    {
-        inventory = GetComponent<PlayerInventory>();
-    }
+    private bool isCreativeMode = false;
 
     void Update()
     {
@@ -37,23 +32,21 @@ public class PlayerMovement : MonoBehaviour
         if (Input.GetKey(KeyCode.D)) moveDirection += transform.right;
         moveDirection = moveDirection.normalized;
 
-        if (Input.GetKeyDown(KeyCode.Space)) jumpRequest = true;
+        if (isCreativeMode)
+        {
+            verticalMovement = 0;
+            if (Input.GetKey(KeyCode.Space)) verticalMovement = 1.5f;
+            if (Input.GetKey(KeyCode.LeftShift)) verticalMovement = -1.5f;
+        }
+        else
+        {
+            if (Input.GetKeyDown(KeyCode.Space)) jumpRequest = true;
+        }
+
         isSprinting = Input.GetKey(KeyCode.LeftControl);
 
         Vector3 pos = transform.position;
         coordsText.text = $"X: {pos.x:F2}\nY: {pos.y:F2}\nZ: {pos.z:F2}";
-
-        inventoryText.text = "Inventory:\n";
-        for (int i = 0; i < inventory.items.Count; i++)
-        {
-            var item = inventory.items[i];
-            if (item == null) continue;
-            if (inventory.currentIndex == i)
-            {
-                inventoryText.text += "> ";
-            }
-            inventoryText.text += $"{item.item.id} x{item.count}\n";
-        }
     }
 
     void FixedUpdate()
@@ -73,17 +66,24 @@ public class PlayerMovement : MonoBehaviour
             targetVelocity = projectedDirection * (isSprinting ? speed * 2 : speed);
         }
 
-        rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
-
-        if (jumpRequest && isGrounded)
+        if (isCreativeMode)
         {
-            rb.AddForce(Vector3.up * Mathf.Sqrt(jumpHeight * -2f * gravity), ForceMode.VelocityChange);
-            jumpRequest = false;
+            rb.linearVelocity = new Vector3(targetVelocity.x, verticalMovement * speed, targetVelocity.z);
         }
-
-        if (!isGrounded)
+        else
         {
-            rb.AddForce(Vector3.up * gravity, ForceMode.Acceleration);
+            rb.linearVelocity = new Vector3(targetVelocity.x, rb.linearVelocity.y, targetVelocity.z);
+
+            if (jumpRequest && isGrounded)
+            {
+                rb.AddForce(Vector3.up * Mathf.Sqrt(jumpHeight * -2f * gravity), ForceMode.VelocityChange);
+                jumpRequest = false;
+            }
+
+            if (!isGrounded)
+            {
+                rb.AddForce(Vector3.up * gravity, ForceMode.Acceleration);
+            }
         }
     }
 
@@ -104,5 +104,14 @@ public class PlayerMovement : MonoBehaviour
     void OnCollisionExit(Collision collision)
     {
         isAgainstWall = false;
+    }
+
+    public void ToggleCreativeMode()
+    {
+        isCreativeMode = !isCreativeMode;
+        speed = isCreativeMode ? 10 : 5;
+        // reset upward velocity
+        rb.linearVelocity = new Vector3(rb.linearVelocity.x, 0, rb.linearVelocity.z);
+        Debug.Log($"Creative mode is now {(isCreativeMode ? "enabled" : "disabled")}");
     }
 }

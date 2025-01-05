@@ -1,3 +1,4 @@
+using TMPro;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -12,6 +13,8 @@ public class PlayerInventory : MonoBehaviour
     public List<InventoryItem> items = new List<InventoryItem>();
     public int currentIndex;
 
+    public TextMeshProUGUI inventoryText;
+
     void Start()
     {
         for (int i = 0; i < 10; i++)
@@ -19,6 +22,21 @@ public class PlayerInventory : MonoBehaviour
             items.Add(null);
         }
         Debug.Log("items initialized");
+    }
+
+    void Update()
+    {
+        inventoryText.text = "Inventory:\n";
+        for (int i = 0; i < items.Count; i++)
+        {
+            var item = items[i];
+            if (item == null) continue;
+            if (currentIndex == i)
+            {
+                inventoryText.text += "> ";
+            }
+            inventoryText.text += $"{item.item.id} x{item.count}\n";
+        }
     }
 
     public void SelectItem(int index)

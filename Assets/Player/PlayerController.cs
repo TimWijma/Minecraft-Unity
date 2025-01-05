@@ -4,19 +4,19 @@ public class PlayerController : MonoBehaviour
 {
     private PlayerMine playerMine;
     private PlayerInventory playerInventory;
+    private PlayerMovement playerMovement;
 
     void Awake()
     {
         playerMine = GetComponent<PlayerMine>();
         playerInventory = GetComponent<PlayerInventory>();
+        playerMovement = GetComponent<PlayerMovement>();
     }
 
     void Update()
     {
         if (playerMine == null) Debug.LogWarning("Playermine does not exist");
         if (playerInventory == null) Debug.LogWarning("Playerinventory does not exist");
-
-        Debug.Log(playerMine);
 
         if (Input.GetMouseButtonDown(0))
         {
@@ -26,9 +26,14 @@ public class PlayerController : MonoBehaviour
         {
             playerMine.PlaceBlock();
         }
-        else if (Input.GetKeyDown(KeyCode.E))
+        
+        if (Input.GetKeyDown(KeyCode.E))
         {
             playerInventory.OpenInventory();
+        }
+        else if (Input.GetKeyDown(KeyCode.C))
+        {
+            playerMovement.ToggleCreativeMode();
         }
         else
         {

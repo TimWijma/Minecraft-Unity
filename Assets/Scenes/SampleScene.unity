@@ -1351,7 +1351,6 @@ MonoBehaviour:
   gravity: -9.81
   jumpHeight: 1.5
   coordsText: {fileID: 1695003549}
-  inventoryText: {fileID: 1252351029}
 --- !u!114 &1808789197
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1510,6 +1509,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentIndex: 0
+  inventoryText: {fileID: 1252351029}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
