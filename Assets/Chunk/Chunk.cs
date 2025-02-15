@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour
@@ -10,16 +11,13 @@ public class Chunk : MonoBehaviour
     private MeshCollider meshCollider;
     public Vector3Int chunkIndex;
 
-    public const int seedX = 2000;
-    public const int seedZ = 4000;
-
-    private const int MAX_CHUNK_DEPTH = -1; // TODO: Get this from WorldGenerator
-
     public bool blocksGenerated = false;
     public bool structuresGenerated = false;
     public bool meshGenerated = false;
 
     private ChunkMeshBuilder meshBuilder;
+
+    private static Dictionary<string, Mesh> cachedMeshes = new();
 
     private void Awake()
     {
@@ -33,49 +31,12 @@ public class Chunk : MonoBehaviour
         this.chunkIndex = chunkIndex;
         blocks = new string[chunkSize, chunkSize, chunkSize];
 
-        GenerateBlocks(isNeighbor);
         blocksGenerated = true;
     }
 
-    private void GenerateBlocks(bool isNeighbor = false)
+    public void ApplyData(ChunkData chunkData)
     {
-        for (int z = 0; z < chunkSize; z++)
-        {
-            for (int y = 0; y < chunkSize; y++)
-            {
-                for (int x = 0; x < chunkSize; x++)
-                {
-                    float worldX = chunkIndex.x * chunkSize + x;
-                    float worldY = chunkIndex.y * chunkSize + y;
-                    float worldZ = chunkIndex.z * chunkSize + z;
-
-                    int height = TerrainHelper.CalculateHeight(Mathf.FloorToInt(worldX), Mathf.FloorToInt(worldZ), seedX, seedZ);
-
-                    int intWorldY = Mathf.FloorToInt(worldY);
-
-                    if (chunkIndex.y == MAX_CHUNK_DEPTH && y == 0)
-                    {
-                        blocks[x, y, z] = "bedrock";
-                    }
-                    else if (intWorldY == height)
-                    {
-                        blocks[x, y, z] = "grass";
-                    }
-                    else if (intWorldY < height - 3)
-                    {
-                        blocks[x, y, z] = "stone";
-                    }
-                    else if (intWorldY < height)
-                    {
-                        blocks[x, y, z] = "dirt";
-                    }
-                    else
-                    {
-                        blocks[x, y, z] = "air";
-                    }
-                }
-            }
-        }
+        blocks = chunkData.blocks;
     }
 
     public void GenerateStructures(Dictionary<Vector3Int, Chunk> chunks)
@@ -115,6 +76,15 @@ public class Chunk : MonoBehaviour
 
     public void GenerateMesh()
     {
+        // string blockHash = GenerateBlockHash();
+
+        // if (cachedMeshes.TryGetValue(blockHash, out Mesh cachedMesh))
+        // {
+        //     meshFilter.mesh = cachedMesh;
+        //     meshCollider.sharedMesh = cachedMesh;
+        //     return;
+        // }
+
         meshBuilder.UpdateBlocks(blocks);
 
         for (int z = 0; z < chunkSize; z++)
@@ -133,16 +103,26 @@ public class Chunk : MonoBehaviour
         Mesh mesh = meshBuilder.BuildMesh();
         meshFilter.mesh = mesh;
         meshCollider.sharedMesh = mesh;
+
+        // cachedMeshes[blockHash] = mesh;
     }
 
-    public void EnableChunk()
+    public void Reset()
     {
-        gameObject.SetActive(true);
-    }
+        if (meshFilter.mesh != null)
+        {
+            meshFilter.mesh.Clear();
+            meshCollider.sharedMesh = null;
+        }
 
-    public void DisableChunk()
-    {
-        gameObject.SetActive(false);
+        blocksGenerated = false;
+        structuresGenerated = false;
+        meshGenerated = false;
+
+        if (blocks != null)
+        {
+            blocks = new string[chunkSize, chunkSize, chunkSize];
+        }
     }
 
     public string GetBlockAtWorldPosition(Vector3 worldPosition)
@@ -175,5 +155,24 @@ public class Chunk : MonoBehaviour
         {
             GenerateMesh();
         }
+    }
+
+    private string GenerateBlockHash()
+    {
+        StringBuilder sb = new();
+
+        for (int z = 0; z < chunkSize; z++)
+        {
+            for (int y = 0; y < chunkSize; y++)
+            {
+                for (int x = 0; x < chunkSize; x++)
+                {
+                    if (blocks[x, y, z] != "air")
+                        sb.Append($"{x},{y},{z}:{blocks[x, y, z]};");
+                }
+            }
+        }
+
+        return sb.ToString();
     }
 }

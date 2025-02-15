@@ -27,8 +27,8 @@ public class TreeGenerator
                 int surfaceHeight = TerrainHelper.CalculateHeight(
                     Mathf.FloorToInt(worldX),
                     Mathf.FloorToInt(worldZ),
-                    Chunk.seedX,
-                    Chunk.seedZ
+                    ChunkData.seedX,
+                    ChunkData.seedZ
                 );
 
                 // Convert to chunk-local coordinates
