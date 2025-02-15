@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class Chunk : MonoBehaviour
@@ -71,6 +72,41 @@ public class Chunk : MonoBehaviour
                     else
                     {
                         blocks[x, y, z] = "air";
+                    }
+                }
+            }
+        }
+    }
+
+    public void GenerateStructures(Dictionary<Vector3Int, Chunk> chunks)
+    {
+        Vector3Int structurePos = new(
+            Random.Range(1, chunkSize - 2),
+            Random.Range(4, chunkSize - 2),
+            Random.Range(1, chunkSize - 2)
+        );
+
+        for (int x = -1; x <= 1; x++)
+        {
+            for (int y = 0; y <= 2; y++)
+            {
+                for (int z = -1; z <= 1; z++)
+                {
+                    Vector3Int blockPos = structurePos + new Vector3Int(x, y, z);
+                    Vector3Int targetChunkCoord = new(
+                        chunkIndex.x + Mathf.FloorToInt((float)blockPos.x / chunkSize),
+                        chunkIndex.y + Mathf.FloorToInt((float)blockPos.y / chunkSize),
+                        chunkIndex.z + Mathf.FloorToInt((float)blockPos.z / chunkSize)
+                    );
+
+                    if (chunks.TryGetValue(targetChunkCoord, out Chunk targetChunk))
+                    {
+                        Vector3Int localPos = new(
+                            (blockPos.x + chunkSize) % chunkSize,
+                            (blockPos.y + chunkSize) % chunkSize,
+                            (blockPos.z + chunkSize) % chunkSize
+                        );
+                        targetChunk.SetBlock(localPos, "stone", false);
                     }
                 }
             }

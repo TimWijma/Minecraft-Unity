@@ -7,45 +7,31 @@ using UnityEngine;
 public class WorldGenerator : MonoBehaviour
 {
     public int chunkSize = 16;
-    public int renderDistance = 5;
+    public int renderDistance = 1;
 
     public Transform player;
     public GameObject chunkPrefab;
 
-    private const int MAX_CHUNK_DEPTH = -1;
-    private const int MAX_CHUNK_HEIGHT = 5;
-
     private Vector3Int currentChunkIndex;
-    public Dictionary<Vector3Int, Chunk> chunks = new();
-    private int chunksGenerated = 0;
+    public Dictionary<Vector3Int, Chunk> loadedChunks = new();
 
-    private const int seedX = 0;
-    private const int seedZ = 0;
+    private Queue<Vector3Int> chunkLoadQueue = new();
+    private bool isGeneratingChunks = false;
 
     void Start()
     {
         player.position = new Vector3(0, 100, 0);
-
         currentChunkIndex = GetChunkIndexForPosition(player.position);
-
-        StartCoroutine(CreateChunksInRadius(renderDistance));
+        StartCoroutine(UpdateChunks());
     }
 
     void Update()
     {
-        if (player == null) return;
-
         Vector3Int newChunkIndex = GetChunkIndexForPosition(player.position);
         if (newChunkIndex != currentChunkIndex)
         {
-            Debug.Log($"Moving to new chunk center: {newChunkIndex}");
-
             currentChunkIndex = newChunkIndex;
-            chunksGenerated = 0;
-
-            ClearChunks();
-
-            StartCoroutine(CreateChunksInRadius(renderDistance));
+            StartCoroutine(UpdateChunks());
         }
     }
 
@@ -58,10 +44,91 @@ public class WorldGenerator : MonoBehaviour
         return new Vector3Int(x, y, z);
     }
 
+    IEnumerator UpdateChunks()
+    {
+        HashSet<Vector3Int> newChunks = new();
+
+        for (int x = -renderDistance; x <= renderDistance; x++)
+        {
+            for (int y = -renderDistance; y <= renderDistance; y++)
+            {
+                for (int z = -renderDistance; z <= renderDistance; z++)
+                {
+                    Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
+                    newChunks.Add(chunkIndex);
+
+                    if (!loadedChunks.ContainsKey(chunkIndex) && !chunkLoadQueue.Contains(chunkIndex))
+                    {
+                        chunkLoadQueue.Enqueue(chunkIndex);
+                    }
+                }
+            }
+        }
+
+        if (!isGeneratingChunks)
+        {
+            StartCoroutine(ProcessChunkQueue());
+        }
+
+        List<Vector3Int> chunksToRemove = loadedChunks.Keys
+            .Where(chunkIndex => !newChunks.Contains(chunkIndex))
+            .ToList();
+
+        foreach (var chunkIndex in chunksToRemove)
+        {
+            loadedChunks.Remove(chunkIndex);
+        }
+
+        yield return null;
+    }
+
+    IEnumerator ProcessChunkQueue()
+    {
+        isGeneratingChunks = true;
+
+        while (chunkLoadQueue.Count > 0)
+        {
+            Vector3Int chunkIndex = chunkLoadQueue.Dequeue();
+            if (!loadedChunks.ContainsKey(chunkIndex))
+            {
+                Chunk chunk = CreateChunk(chunkIndex);
+                loadedChunks[chunkIndex] = chunk;
+                yield return null;
+            }
+        }
+
+        List<Chunk> chunkList = new(loadedChunks.Values);
+        foreach (var chunk in chunkList)
+        {
+            chunk.GenerateStructures(loadedChunks);
+            yield return null;
+        }
+
+        foreach (var chunk in chunkList)
+        {
+            chunk.GenerateMesh();
+            yield return null;
+        }
+
+        isGeneratingChunks = false;
+    }
+
+    public Chunk CreateChunk(Vector3Int chunkIndex, bool isNeighbor = false)
+    {
+        Vector3Int chunkPosition = chunkIndex * chunkSize;
+        GameObject chunkObject = Instantiate(chunkPrefab, chunkPosition, Quaternion.identity);
+        Chunk chunk = chunkObject.GetComponent<Chunk>();
+        chunk.Initialize(chunkIndex, isNeighbor);
+
+        return chunk;
+    }
+
+
+
     public Chunk GetChunkAtPosition(Vector3 position)
     {
         Vector3Int chunkIndex = GetChunkIndexForPosition(position);
-        if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
+        if (loadedChunks.TryGetValue(chunkIndex, out Chunk chunk))
         {
             return chunk;
         }
@@ -69,126 +136,11 @@ public class WorldGenerator : MonoBehaviour
         return null;
     }
 
-    Chunk[] GetChunksInRenderDistance(int radius)
-    {
-        return chunks.Values.Where(chunk =>
-            Vector3Int.Distance(chunk.chunkIndex, currentChunkIndex) <= radius
-        ).ToArray();
-    }
-
-    void ClearChunks()
-    {
-        float maxDistance = renderDistance + 1.5f;
-
-        HashSet<Vector3Int> chunksToKeep = new();
-        for (int z = -renderDistance; z <= renderDistance; z++)
-        {
-            for (int y = -renderDistance; y <= renderDistance; y++)
-            {
-                for (int x = -renderDistance; x <= renderDistance; x++)
-                {
-                    Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
-                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) <= maxDistance)
-                    {
-                        chunksToKeep.Add(chunkIndex);
-                    }
-                }
-            }
-        }
-
-        var chunksToRemove = chunks.Keys.Except(chunksToKeep).ToList();
-        foreach (var chunkIndex in chunksToRemove)
-        {
-            if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
-            {
-                Destroy(chunk.gameObject);
-            }
-            chunks.Remove(chunkIndex);
-        }
-    }
-
-    IEnumerator CreateChunksInRadius(int radius)
-    {
-        yield return StartCoroutine(InitializeChunks(radius));
-        yield return StartCoroutine(GenerateStructures(radius));
-        yield return StartCoroutine(GenerateMeshes(radius));
-    }
-
-    IEnumerator InitializeChunks(int radius)
-    {
-        for (int z = -radius; z <= radius; z++)
-        {
-            for (int y = -radius; y <= radius; y++)
-            {
-                for (int x = -radius; x <= radius; x++)
-                {
-                    Vector3Int chunkIndex = currentChunkIndex + new Vector3Int(x, y, z);
-
-                    if (chunkIndex.y < MAX_CHUNK_DEPTH || chunkIndex.y > MAX_CHUNK_HEIGHT) continue;
-                    if (Vector3Int.Distance(chunkIndex, currentChunkIndex) > radius) continue;
-                    if (chunks.ContainsKey(chunkIndex)) continue;
-
-                    CreateChunk(chunkIndex);
-                    Debug.Log($"Generated chunk {chunkIndex}");
-
-                    yield return null;
-                }
-            }
-        }
-    }
-
-    public void CreateChunk(Vector3Int chunkIndex, bool isNeighbor = false)
-    {
-        Vector3Int chunkPosition = chunkIndex * chunkSize;
-        GameObject chunkObject = Instantiate(chunkPrefab, chunkPosition, Quaternion.identity);
-        Chunk chunk = chunkObject.GetComponent<Chunk>();
-        chunk.Initialize(chunkIndex, isNeighbor);
-        chunksGenerated++;
-        chunks.Add(chunkIndex, chunk);
-    }
-
-    IEnumerator GenerateStructures(int radius)
-    {
-        foreach (var chunk in GetChunksInRenderDistance(radius))
-        {
-            if (chunk.structuresGenerated) continue;
-
-            Vector3Int chunkIndex = chunk.chunkIndex;
-
-            Debug.Log($"Generating structures for chunk {chunkIndex}");
-
-            TreeGenerator treeGenerator = new(this, chunk);
-            treeGenerator.GenerateTrees();
-
-            chunk.structuresGenerated = true;
-
-            yield return null;
-        }
-    }
-
-    IEnumerator GenerateMeshes(int radius)
-    {
-        foreach (var chunk in GetChunksInRenderDistance(radius))
-        {
-            if (chunk == null || chunk.gameObject == null) continue; // Skip destroyed chunks
-            if (!chunk.blocksGenerated || !chunk.structuresGenerated) continue;
-            if (chunk.meshGenerated) continue;
-
-            chunk.GenerateMesh();
-
-            Debug.Log($"Generated mesh for chunk {chunk.chunkIndex}");
-
-            chunk.meshGenerated = true;
-
-            yield return null;
-        }
-    }
-
     public void PlaceBlockGlobal(Vector3 worldPosition, string blockId, Vector3Int originalChunk)
     {
         Vector3Int chunkIndex = GetChunkIndexForPosition(worldPosition);
 
-        if (chunks.TryGetValue(chunkIndex, out Chunk chunk))
+        if (loadedChunks.TryGetValue(chunkIndex, out Chunk chunk))
         {
             chunk.SetBlock(worldPosition, blockId, false);
         }

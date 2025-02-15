@@ -64,13 +64,13 @@ public class TreeGenerator
                     var blockPosition = position + new Vector3Int(x, y, z);
                     var blockChunkIndex = worldGenerator.GetChunkIndexForPosition(blockPosition);
 
-                    if (blockChunkIndex != chunk.chunkIndex && !worldGenerator.chunks.ContainsKey(blockChunkIndex))
-                    {
-                        worldGenerator.CreateChunk(blockChunkIndex, true);
-                    }
+                    // if (blockChunkIndex != chunk.chunkIndex && !worldGenerator.chunks.ContainsKey(blockChunkIndex))
+                    // {
+                    //     worldGenerator.CreateChunk(blockChunkIndex, true);
+                    // }
 
                     worldGenerator.PlaceBlockGlobal(blockPosition, "leaves", chunk.chunkIndex);
-                    worldGenerator.chunks[blockChunkIndex].meshGenerated = false;
+                    worldGenerator.loadedChunks[blockChunkIndex].meshGenerated = false;
                 }
             }
         }
@@ -82,13 +82,13 @@ public class TreeGenerator
             var blockPosition = position + new Vector3Int(0, y, 0);
             var blockChunkIndex = worldGenerator.GetChunkIndexForPosition(blockPosition);
 
-            if (blockChunkIndex != chunk.chunkIndex && !worldGenerator.chunks.ContainsKey(blockChunkIndex))
-            {
-                worldGenerator.CreateChunk(blockChunkIndex, true);
-            }
+            // if (blockChunkIndex != chunk.chunkIndex && !worldGenerator.chunks.ContainsKey(blockChunkIndex))
+            // {
+            //     worldGenerator.CreateChunk(blockChunkIndex, true);
+            // }
 
             worldGenerator.PlaceBlockGlobal(blockPosition, "wood", chunk.chunkIndex);
-            worldGenerator.chunks[blockChunkIndex].meshGenerated = false;
+            worldGenerator.loadedChunks[blockChunkIndex].meshGenerated = false;
         }
     }
 }

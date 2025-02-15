@@ -270,7 +270,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: 16
-  renderDistance: 4
+  renderDistance: 1
   player: {fileID: 1808789202}
   chunkPrefab: {fileID: 1228084881}
 --- !u!4 &476832795
