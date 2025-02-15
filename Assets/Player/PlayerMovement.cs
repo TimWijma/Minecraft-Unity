@@ -7,7 +7,7 @@ public class PlayerMovement : MonoBehaviour
     public Rigidbody rb;
 
     public float speed = 5f;
-    public float gravity = -9.81f;
+    public float gravity = -14;
     public float jumpHeight = 1.5f;
 
     private Vector3 moveDirection;
@@ -60,11 +60,11 @@ public class PlayerMovement : MonoBehaviour
 
         Vector3 targetVelocity = moveDirection * (isSprinting ? speed * 2 : speed);
 
-        if (isAgainstWall && moveDirection.magnitude > 0)
-        {
-            Vector3 projectedDirection = Vector3.ProjectOnPlane(targetVelocity, wallNormal).normalized;
-            targetVelocity = projectedDirection * (isSprinting ? speed * 2 : speed);
-        }
+        // if (isAgainstWall && moveDirection.magnitude > 0)
+        // {
+        //     Vector3 projectedDirection = Vector3.ProjectOnPlane(targetVelocity, wallNormal).normalized;
+        //     targetVelocity = projectedDirection * (isSprinting ? speed * 2 : speed);
+        // }
 
         if (isCreativeMode)
         {
@@ -87,24 +87,24 @@ public class PlayerMovement : MonoBehaviour
         }
     }
 
-    void OnCollisionStay(Collision collision)
-    {
-        isAgainstWall = false;
-        foreach (ContactPoint contact in collision.contacts)
-        {
-            if (Mathf.Abs(contact.normal.y) < 0.1f)
-            {
-                wallNormal = contact.normal;
-                isAgainstWall = true;
-                break;
-            }
-        }
-    }
+    // void OnCollisionStay(Collision collision)
+    // {
+    //     isAgainstWall = false;
+    //     foreach (ContactPoint contact in collision.contacts)
+    //     {
+    //         if (Mathf.Abs(contact.normal.y) < 0.1f)
+    //         {
+    //             wallNormal = contact.normal;
+    //             isAgainstWall = true;
+    //             break;
+    //         }
+    //     }
+    // }
 
-    void OnCollisionExit(Collision collision)
-    {
-        isAgainstWall = false;
-    }
+    // void OnCollisionExit(Collision collision)
+    // {
+    //     isAgainstWall = false;
+    // }
 
     public void ToggleCreativeMode()
     {
