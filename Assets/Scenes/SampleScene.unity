@@ -270,7 +270,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chunkSize: 16
-  renderDistance: 1
+  renderDistance: 5
   player: {fileID: 1808789202}
   chunkPrefab: {fileID: 1228084881}
 --- !u!4 &476832795
@@ -1347,7 +1347,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rb: {fileID: 1808789198}
-  speed: 5
+  speed: 20
   gravity: -9.81
   jumpHeight: 1.5
   coordsText: {fileID: 1695003549}

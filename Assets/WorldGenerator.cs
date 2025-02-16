@@ -20,12 +20,10 @@ public class WorldGenerator : MonoBehaviour
 
     private readonly Queue<GameObject> chunkPool = new();
 
-    private readonly HashSet<Vector3Int> newChunks = new();
     private readonly List<Vector3Int> chunksToRemove = new();
-
     private readonly List<Vector3Int> sortedChunkQueue = new();
 
-    private readonly List<Chunk> processingChunks = new();
+    private readonly HashSet<Chunk> activeChunks = new();
 
     void Start()
     {
@@ -44,27 +42,30 @@ public class WorldGenerator : MonoBehaviour
             currentChunkIndex = newChunkIndex;
             Debug.Log($"Player moved to chunk {currentChunkIndex}");
 
+            List<Chunk> chunksToUnload = new();
+            foreach (var chunk in activeChunks)
+            {
+                if (!loadedChunks.ContainsKey(chunk.chunkIndex))
+                {
+                    chunksToUnload.Add(chunk);
+                }
+            }
+
+            foreach (var chunk in chunksToUnload)
+            {
+                ReleaseChunkToPool(chunk);
+            }
+
             if (isGeneratingChunks)
             {
                 StopCoroutine(ProcessChunkQueue());
                 isGeneratingChunks = false;
             }
 
-
-            // foreach (var chunk in processingChunks)
-            // {
-            //     if (chunk != null)
-            //     {
-            //         chunk.StopAllCoroutines();
-            //         ReleaseChunkToPool(chunk);
-            //     }
-            // }
-
-            // processingChunks.Clear();
-
             chunkLoadQueue.Clear();
             sortedChunkQueue.Clear();
 
+            Debug.Log($"Total active chunks: {FindObjectsByType<Chunk>(FindObjectsSortMode.None).Length}");
 
             StartCoroutine(UpdateChunks());
         }
@@ -72,7 +73,7 @@ public class WorldGenerator : MonoBehaviour
 
     void InitializeChunkPool()
     {
-        int 
+        int
         initialPoolSize = (renderDistance * 2 + 1) * (renderDistance * 2 + 1) * (renderDistance * 2 + 1);
 
         for (int i = 0; i < initialPoolSize; i++)
@@ -102,9 +103,16 @@ public class WorldGenerator : MonoBehaviour
 
     public void ReleaseChunkToPool(Chunk chunk)
     {
-        if (chunk == null || chunk.gameObject == null) return;
+        if (chunk == null || chunk.gameObject == null)
+        {
+            Debug.LogWarning($"Tried to release null chunk {chunk.chunkIndex} to the pool.");
+        }
 
+        activeChunks.Remove(chunk);
         loadedChunks.Remove(chunk.chunkIndex);
+
+        chunk.StopAllCoroutines();
+        chunk.Reset();
         chunk.gameObject.SetActive(false);
         chunkPool.Enqueue(chunk.gameObject);
     }
@@ -120,7 +128,9 @@ public class WorldGenerator : MonoBehaviour
 
     IEnumerator UpdateChunks()
     {
-        newChunks.Clear();
+        List<Vector3Int> newChunks = new();
+
+        chunksToRemove.Clear();
 
         for (int x = -renderDistance; x <= renderDistance; x++)
         {
@@ -139,41 +149,42 @@ public class WorldGenerator : MonoBehaviour
             }
         }
 
-        if (!isGeneratingChunks)
+        foreach (var chunkIndex in loadedChunks.Keys.ToList())
         {
-            StartCoroutine(ProcessChunkQueue());
-        }
-
-        chunksToRemove.Clear();
-
-        foreach (var chunkIndex in loadedChunks.Keys)
-        {
-            int dx = Mathf.Abs(chunkIndex.x - currentChunkIndex.x);
-            int dy = Mathf.Abs(chunkIndex.y - currentChunkIndex.y);
-            int dz = Mathf.Abs(chunkIndex.z - currentChunkIndex.z);
-
-            if (dx > renderDistance || dy > renderDistance || dz > renderDistance)
+            if (!newChunks.Contains(chunkIndex))
             {
-                if (!newChunks.Contains(chunkIndex))
-                {
-                    chunksToRemove.Add(chunkIndex);
-                }
+                chunksToRemove.Add(chunkIndex);
             }
         }
 
         foreach (var chunkIndex in chunksToRemove)
         {
-            Chunk chunk = loadedChunks[chunkIndex];
-            ReleaseChunkToPool(chunk);
-            loadedChunks.Remove(chunkIndex);
+            if (loadedChunks.TryGetValue(chunkIndex, out Chunk chunk))
+            {
+                ReleaseChunkToPool(chunk);
+            }
+            else
+            {
+                Debug.LogWarning($"Trying to remove chunk {chunkIndex} that is not in loadedChunks!");
+            }
         }
 
         yield return null;
+
+        if (!isGeneratingChunks)
+        {
+            StartCoroutine(ProcessChunkQueue());
+        }
     }
 
     IEnumerator ProcessChunkQueue()
     {
         isGeneratingChunks = true;
+
+        while (chunksToRemove.Count > 0)
+        {
+            yield return null;
+        }
 
         while (chunkLoadQueue.Count > 0)
         {
@@ -213,7 +224,6 @@ public class WorldGenerator : MonoBehaviour
             {
                 ChunkData chunkData = task.Result;
                 Chunk chunk = InstantiateChunk(chunkData.chunkIndex);
-                // processingChunks.Add(chunk);
                 chunk.ApplyChunkData(chunkData);
                 loadedChunks[chunkData.chunkIndex] = chunk;
 
@@ -229,12 +239,10 @@ public class WorldGenerator : MonoBehaviour
             for (int i = 0; i < newChunks.Count; i++)
             {
                 newChunks[i].ApplyMeshData(meshTasks[i].Result);
-                // processingChunks.Remove(newChunks[i]);
                 yield return null;
             }
         }
 
-        // processingChunks.Clear();
         isGeneratingChunks = false;
     }
 
@@ -253,8 +261,9 @@ public class WorldGenerator : MonoBehaviour
         chunkObject.transform.position = chunkPosition;
 
         Chunk chunk = chunkObject.GetComponent<Chunk>();
-        chunk.Reset();
         chunk.chunkIndex = chunkIndex;
+
+        activeChunks.Add(chunk);
 
         chunkObject.SetActive(true);
         return chunk;
@@ -304,6 +313,19 @@ public class WorldGenerator : MonoBehaviour
                 Gizmos.DrawWireCube(chunkPos + Vector3.one * chunkSize / 2, Vector3.one * (chunkSize * 0.9f));
             }
         }
+
+        if (Application.isPlaying)
+        {
+            foreach (var chunk in FindObjectsByType<Chunk>(FindObjectsSortMode.None))
+            {
+                if (!loadedChunks.ContainsKey(chunk.chunkIndex))
+                {
+                    Gizmos.color = Color.magenta;
+                    Gizmos.DrawWireCube(chunk.transform.position + Vector3.one * chunkSize / 2, Vector3.one * chunkSize);
+                }
+            }
+        }
+
     }
 
     public Chunk FindChunk(int x, int y, int z)
