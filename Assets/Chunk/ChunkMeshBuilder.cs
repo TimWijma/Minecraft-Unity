@@ -17,8 +17,9 @@ public class ChunkMeshBuilder
 
     private string[,,] blocks;
 
-    public ChunkMeshBuilder(int chunkSize)
+    public ChunkMeshBuilder(int chunkSize, string[,,] blocks)
     {
+        this.blocks = blocks;
         int maxCubes = chunkSize * chunkSize * chunkSize;
 
         maxVertices = maxCubes * 8;
@@ -179,21 +180,48 @@ public class ChunkMeshBuilder
         if (IsTransparent(x, y - 1, z)) AddFace(Direction.Bottom, x, y, z);
     }
 
-    public Mesh BuildMesh()
+    public Vector3[] GetVertices()
     {
-        Mesh mesh = new();
-        Array.Resize(ref vertices, currentVertIndex);
-        Array.Resize(ref triangles, currentTriIndex);
-        Array.Resize(ref uvs, currentVertIndex);
-        Array.Resize(ref normals, currentVertIndex);
+        Vector3[] result = new Vector3[currentVertIndex];
+        Array.Copy(vertices, result, currentVertIndex);
 
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-        mesh.uv = uvs;
-        mesh.normals = normals;
+        return result;
+    }
 
-        mesh.RecalculateBounds();
+    public int[] GetTriangles()
+    {
+        int[] result = new int[currentTriIndex];
+        Array.Copy(triangles, result, currentTriIndex);
 
-        return mesh;
+        return result;
+    }
+
+    public Vector2[] GetUVs()
+    {
+        Vector2[] result = new Vector2[currentVertIndex];
+        Array.Copy(uvs, result, currentVertIndex);
+
+        return result;
+    }
+
+    public Vector3[] GetNormals()
+    {
+        Vector3[] result = new Vector3[currentVertIndex];
+        Array.Copy(normals, result, currentVertIndex);
+
+        return result;
+    }
+
+    public MeshData GetMeshData()
+    {
+        MeshData meshData = new()
+        {
+            vertices = GetVertices(),
+            triangles = GetTriangles(),
+            uvs = GetUVs(),
+            normals = GetNormals()
+        };
+
+        return meshData;
     }
 }

@@ -15,15 +15,10 @@ public class Chunk : MonoBehaviour
     public bool structuresGenerated = false;
     public bool meshGenerated = false;
 
-    private ChunkMeshBuilder meshBuilder;
-
-    private static Dictionary<string, Mesh> cachedMeshes = new();
-
     private void Awake()
     {
         meshFilter = GetComponent<MeshFilter>();
         meshCollider = GetComponent<MeshCollider>();
-        meshBuilder = new ChunkMeshBuilder(chunkSize);
     }
 
     public void Initialize(Vector3Int chunkIndex, bool isNeighbor = false)
@@ -34,9 +29,25 @@ public class Chunk : MonoBehaviour
         blocksGenerated = true;
     }
 
-    public void ApplyData(ChunkData chunkData)
+    public void ApplyChunkData(ChunkData chunkData)
     {
         blocks = chunkData.blocks;
+    }
+
+    public void ApplyMeshData(MeshData meshData)
+    {
+        Mesh mesh = new()
+        {
+            vertices = meshData.vertices,
+            triangles = meshData.triangles,
+            uv = meshData.uvs,
+            normals = meshData.normals
+        };
+
+        meshFilter.mesh = mesh;
+        meshCollider.sharedMesh = mesh;
+
+        meshGenerated = true;
     }
 
     public void GenerateStructures(Dictionary<Vector3Int, Chunk> chunks)
@@ -74,18 +85,9 @@ public class Chunk : MonoBehaviour
         }
     }
 
-    public void GenerateMesh()
+    public MeshData GenerateMeshData()
     {
-        // string blockHash = GenerateBlockHash();
-
-        // if (cachedMeshes.TryGetValue(blockHash, out Mesh cachedMesh))
-        // {
-        //     meshFilter.mesh = cachedMesh;
-        //     meshCollider.sharedMesh = cachedMesh;
-        //     return;
-        // }
-
-        meshBuilder.UpdateBlocks(blocks);
+        ChunkMeshBuilder meshBuilder = new(chunkSize, blocks);
 
         for (int z = 0; z < chunkSize; z++)
         {
@@ -100,11 +102,7 @@ public class Chunk : MonoBehaviour
             }
         }
 
-        Mesh mesh = meshBuilder.BuildMesh();
-        meshFilter.mesh = mesh;
-        meshCollider.sharedMesh = mesh;
-
-        // cachedMeshes[blockHash] = mesh;
+        return meshBuilder.GetMeshData();
     }
 
     public void Reset()
@@ -148,7 +146,7 @@ public class Chunk : MonoBehaviour
         blocks[chunkX, chunkY, chunkZ] = blockId;
         if (updateMesh)
         {
-            GenerateMesh();
+            // GenerateMesh();
         }
     }
 

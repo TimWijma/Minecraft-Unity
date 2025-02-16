@@ -150,13 +150,13 @@ public class WorldGenerator : MonoBehaviour
                 return distanceA.CompareTo(distanceB);
             });
 
-            List<Task<ChunkData>> tasks = new();
+            List<Task<ChunkData>> dataTasks = new();
             int chunksToProcess = Mathf.Min(sortedChunkQueue.Count, 4);
 
             for (int i = 0; i < chunksToProcess; i++)
             {
                 Vector3Int chunkIndex = sortedChunkQueue[i];
-                tasks.Add(Task.Run(() => GenerateChunkData(chunkIndex)));
+                dataTasks.Add(Task.Run(() => GenerateChunkData(chunkIndex)));
             }
 
             sortedChunkQueue.RemoveRange(0, chunksToProcess);
@@ -166,22 +166,34 @@ public class WorldGenerator : MonoBehaviour
                 chunkLoadQueue.Enqueue(chunkIndex);
             }
 
-            yield return new WaitUntil(() => tasks.All(t => t.IsCompleted));
+            yield return new WaitUntil(() => dataTasks.All(t => t.IsCompleted));
 
-            foreach (var task in tasks)
+            List<Task<MeshData>> meshTasks = new();
+            List<Chunk> newChunks = new();
+
+            foreach (var task in dataTasks)
             {
                 ChunkData chunkData = task.Result;
                 Chunk chunk = InstantiateChunk(chunkData.chunkIndex);
-                chunk.ApplyData(chunkData);
+                chunk.ApplyChunkData(chunkData);
                 loadedChunks[chunkData.chunkIndex] = chunk;
 
-                chunk.GenerateStructures(loadedChunks);
-                chunk.GenerateMesh();
+                newChunks.Add(chunk);
 
+                chunk.GenerateStructures(loadedChunks);
+
+                meshTasks.Add(Task.Run(() => chunk.GenerateMeshData()));
+            }
+
+            yield return new WaitUntil(() => meshTasks.All(t => t.IsCompleted));
+
+            for (int i = 0; i < newChunks.Count; i++)
+            {
+                newChunks[i].ApplyMeshData(meshTasks[i].Result);
                 yield return null;
             }
         }
-        
+
         isGeneratingChunks = false;
     }
 
