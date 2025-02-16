@@ -15,22 +15,21 @@ public class WorldGenerator : MonoBehaviour
     private Vector3Int currentChunkIndex;
     public Dictionary<Vector3Int, Chunk> loadedChunks = new();
 
-    private Queue<Vector3Int> chunkLoadQueue = new();
+    private readonly Queue<Vector3Int> chunkLoadQueue = new();
     private bool isGeneratingChunks = false;
 
-    private Queue<GameObject> chunkPool = new();
-    public int initialPoolSize = 100;
+    private readonly Queue<GameObject> chunkPool = new();
 
-    private HashSet<Vector3Int> newChunks = new();
-    private List<Vector3Int> chunksToRemove = new();
+    private readonly HashSet<Vector3Int> newChunks = new();
+    private readonly List<Vector3Int> chunksToRemove = new();
 
-    private List<Vector3Int> sortedChunkQueue = new();
+    private readonly List<Vector3Int> sortedChunkQueue = new();
+
+    private readonly List<Chunk> processingChunks = new();
 
     void Start()
     {
-        initialPoolSize = (renderDistance * 2 + 1) * (renderDistance * 2 + 1) * (renderDistance * 2 + 1);
-
-        InitializeChunkPool(initialPoolSize);
+        InitializeChunkPool();
 
         player.position = new Vector3(0, 100, 0);
         currentChunkIndex = GetChunkIndexForPosition(player.position);
@@ -43,37 +42,69 @@ public class WorldGenerator : MonoBehaviour
         if (newChunkIndex != currentChunkIndex)
         {
             currentChunkIndex = newChunkIndex;
-            // LoadPlayerChunkFirst();
+            Debug.Log($"Player moved to chunk {currentChunkIndex}");
+
+            if (isGeneratingChunks)
+            {
+                StopCoroutine(ProcessChunkQueue());
+                isGeneratingChunks = false;
+            }
+
+
+            // foreach (var chunk in processingChunks)
+            // {
+            //     if (chunk != null)
+            //     {
+            //         chunk.StopAllCoroutines();
+            //         ReleaseChunkToPool(chunk);
+            //     }
+            // }
+
+            // processingChunks.Clear();
+
+            chunkLoadQueue.Clear();
+            sortedChunkQueue.Clear();
+
+
             StartCoroutine(UpdateChunks());
         }
     }
 
-    void InitializeChunkPool(int size)
+    void InitializeChunkPool()
     {
-        for (int i = 0; i < size; i++)
+        int 
+        initialPoolSize = (renderDistance * 2 + 1) * (renderDistance * 2 + 1) * (renderDistance * 2 + 1);
+
+        for (int i = 0; i < initialPoolSize; i++)
         {
-            GameObject chunkObject = Instantiate(chunkPrefab, Vector3.zero, Quaternion.identity);
-            chunkObject.SetActive(false);
-            chunkPool.Enqueue(chunkObject);
+            AddChunkToPool();
         }
     }
 
     private GameObject GetChunkFromPool()
     {
-        if (chunkPool.Count > 0)
+        if (chunkPool.Count == 0)
         {
-            return chunkPool.Dequeue();
+            AddChunkToPool();
+            Debug.LogWarning("Chunk pool was empty. Instantiated and added a new chunk to the pool.");
         }
-        else
-        {
-            GameObject chunkObject = Instantiate(chunkPrefab, Vector3.zero, Quaternion.identity);
-            Debug.LogWarning("Chunk pool is empty. Instantiating new chunk.");
-            return chunkObject;
-        }
+
+        return chunkPool.Dequeue();
+    }
+
+    private void AddChunkToPool()
+    {
+        GameObject chunkObject = Instantiate(chunkPrefab, Vector3.zero, Quaternion.identity);
+
+        chunkObject.SetActive(false);
+        chunkPool.Enqueue(chunkObject);
     }
 
     public void ReleaseChunkToPool(Chunk chunk)
     {
+        if (chunk == null || chunk.gameObject == null) return;
+
+        loadedChunks.Remove(chunk.chunkIndex);
         chunk.gameObject.SetActive(false);
         chunkPool.Enqueue(chunk.gameObject);
     }
@@ -117,9 +148,16 @@ public class WorldGenerator : MonoBehaviour
 
         foreach (var chunkIndex in loadedChunks.Keys)
         {
-            if (!newChunks.Contains(chunkIndex))
+            int dx = Mathf.Abs(chunkIndex.x - currentChunkIndex.x);
+            int dy = Mathf.Abs(chunkIndex.y - currentChunkIndex.y);
+            int dz = Mathf.Abs(chunkIndex.z - currentChunkIndex.z);
+
+            if (dx > renderDistance || dy > renderDistance || dz > renderDistance)
             {
-                chunksToRemove.Add(chunkIndex);
+                if (!newChunks.Contains(chunkIndex))
+                {
+                    chunksToRemove.Add(chunkIndex);
+                }
             }
         }
 
@@ -175,6 +213,7 @@ public class WorldGenerator : MonoBehaviour
             {
                 ChunkData chunkData = task.Result;
                 Chunk chunk = InstantiateChunk(chunkData.chunkIndex);
+                // processingChunks.Add(chunk);
                 chunk.ApplyChunkData(chunkData);
                 loadedChunks[chunkData.chunkIndex] = chunk;
 
@@ -190,10 +229,12 @@ public class WorldGenerator : MonoBehaviour
             for (int i = 0; i < newChunks.Count; i++)
             {
                 newChunks[i].ApplyMeshData(meshTasks[i].Result);
+                // processingChunks.Remove(newChunks[i]);
                 yield return null;
             }
         }
 
+        // processingChunks.Clear();
         isGeneratingChunks = false;
     }
 
@@ -242,5 +283,32 @@ public class WorldGenerator : MonoBehaviour
         {
             Debug.LogWarning($"Chunk not found at {chunkIndex}. PlaceBlock called from chunk {originalChunk}");
         }
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (Application.isPlaying && sortedChunkQueue != null)
+        {
+            // Draw the current chunk index
+            Gizmos.color = Color.red;
+            Vector3 currentPos = new Vector3(currentChunkIndex.x, currentChunkIndex.y, currentChunkIndex.z) * chunkSize;
+            Gizmos.DrawWireCube(currentPos + Vector3.one * chunkSize / 2, Vector3.one * chunkSize);
+
+            // Draw the sorted queue with different colors
+            for (int i = 0; i < sortedChunkQueue.Count; i++)
+            {
+                float t = (float)i / sortedChunkQueue.Count;
+                Gizmos.color = Color.Lerp(Color.green, Color.yellow, t);
+
+                Vector3 chunkPos = new Vector3(sortedChunkQueue[i].x, sortedChunkQueue[i].y, sortedChunkQueue[i].z) * chunkSize;
+                Gizmos.DrawWireCube(chunkPos + Vector3.one * chunkSize / 2, Vector3.one * (chunkSize * 0.9f));
+            }
+        }
+    }
+
+    public Chunk FindChunk(int x, int y, int z)
+    {
+        Vector3Int chunkIndex = new Vector3Int(x, y, z);
+        return loadedChunks.ContainsKey(chunkIndex) ? loadedChunks[chunkIndex] : null;
     }
 }

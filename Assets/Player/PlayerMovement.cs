@@ -6,7 +6,7 @@ public class PlayerMovement : MonoBehaviour
     // public CharacterController controller;
     public Rigidbody rb;
 
-    public float speed = 5f;
+    public float speed = 20f;
     public float gravity = -14;
     public float jumpHeight = 1.5f;
 
@@ -21,7 +21,7 @@ public class PlayerMovement : MonoBehaviour
 
     public TextMeshProUGUI coordsText;
 
-    private bool isCreativeMode = false;
+    private bool isCreativeMode = true;
 
     void Update()
     {
