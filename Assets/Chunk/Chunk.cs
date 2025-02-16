@@ -118,11 +118,6 @@ public class Chunk : MonoBehaviour
         blocksGenerated = false;
         structuresGenerated = false;
         meshGenerated = false;
-
-        if (blocks != null)
-        {
-            blocks = new string[chunkSize, chunkSize, chunkSize];
-        }
     }
 
     public string GetBlockAtWorldPosition(Vector3 worldPosition)

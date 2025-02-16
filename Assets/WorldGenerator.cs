@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +19,7 @@ public class WorldGenerator : MonoBehaviour
     private bool isGeneratingChunks = false;
 
     private Queue<GameObject> chunkPool = new();
-    public int initialPoolSize = 50;
+    public int initialPoolSize = 100;
 
     private HashSet<Vector3Int> newChunks = new();
     private List<Vector3Int> chunksToRemove = new();
@@ -29,6 +28,8 @@ public class WorldGenerator : MonoBehaviour
 
     void Start()
     {
+        initialPoolSize = (renderDistance * 2 + 1) * (renderDistance * 2 + 1) * (renderDistance * 2 + 1);
+
         InitializeChunkPool(initialPoolSize);
 
         player.position = new Vector3(0, 100, 0);
@@ -66,6 +67,7 @@ public class WorldGenerator : MonoBehaviour
         else
         {
             GameObject chunkObject = Instantiate(chunkPrefab, Vector3.zero, Quaternion.identity);
+            Debug.LogWarning("Chunk pool is empty. Instantiating new chunk.");
             return chunkObject;
         }
     }
@@ -131,20 +133,6 @@ public class WorldGenerator : MonoBehaviour
         yield return null;
     }
 
-    private void LoadPlayerChunkFirst()
-    {
-        Vector3Int playerChunkIndex = GetChunkIndexForPosition(player.position);
-        if (!loadedChunks.ContainsKey(playerChunkIndex) && !chunkLoadQueue.Contains(playerChunkIndex))
-        {
-            ChunkData chunkData = GenerateChunkData(playerChunkIndex);
-            Chunk chunk = InstantiateChunk(playerChunkIndex);
-            chunk.ApplyData(chunkData);
-            loadedChunks[playerChunkIndex] = chunk;
-            chunk.GenerateStructures(loadedChunks);
-            chunk.GenerateMesh();
-        }
-    }
-
     IEnumerator ProcessChunkQueue()
     {
         isGeneratingChunks = true;
@@ -162,19 +150,20 @@ public class WorldGenerator : MonoBehaviour
                 return distanceA.CompareTo(distanceB);
             });
 
-            foreach (var chunkIndex in sortedChunkQueue)
-            {
-                Debug.Log($"Player position: {currentChunkIndex}, Chunk index: {chunkIndex}");
-                chunkLoadQueue.Enqueue(chunkIndex);
-            }
-
             List<Task<ChunkData>> tasks = new();
-            int chunksToProcess = Math.Min(chunkLoadQueue.Count, 4);
+            int chunksToProcess = Mathf.Min(sortedChunkQueue.Count, 4);
 
             for (int i = 0; i < chunksToProcess; i++)
             {
-                Vector3Int chunkIndex = chunkLoadQueue.Dequeue();
+                Vector3Int chunkIndex = sortedChunkQueue[i];
                 tasks.Add(Task.Run(() => GenerateChunkData(chunkIndex)));
+            }
+
+            sortedChunkQueue.RemoveRange(0, chunksToProcess);
+
+            foreach (var chunkIndex in sortedChunkQueue)
+            {
+                chunkLoadQueue.Enqueue(chunkIndex);
             }
 
             yield return new WaitUntil(() => tasks.All(t => t.IsCompleted));
@@ -185,24 +174,14 @@ public class WorldGenerator : MonoBehaviour
                 Chunk chunk = InstantiateChunk(chunkData.chunkIndex);
                 chunk.ApplyData(chunkData);
                 loadedChunks[chunkData.chunkIndex] = chunk;
+
+                chunk.GenerateStructures(loadedChunks);
+                chunk.GenerateMesh();
+
+                yield return null;
             }
-
-            yield return null;
         }
-
-        List<Chunk> chunkList = new(loadedChunks.Values);
-        foreach (var chunk in chunkList)
-        {
-            chunk.GenerateStructures(loadedChunks);
-            yield return null;
-        }
-
-        foreach (var chunk in chunkList)
-        {
-            chunk.GenerateMesh();
-            yield return null;
-        }
-
+        
         isGeneratingChunks = false;
     }
 
